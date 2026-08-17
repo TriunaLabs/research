@@ -33,11 +33,13 @@ TEMPLATE = """<!doctype html>
 :root {{
   --surface: #fcfcfb; --ink: #1a1a19; --ink-2: #52514e; --muted: #898781;
   --hairline: #e1e0d9; --accent: #2a78d6; --quote-bg: #f5f4f1;
+  --callout-bg: rgba(42, 120, 214, 0.07);
 }}
 @media (prefers-color-scheme: dark) {{
   :root {{
     --surface: #1a1a19; --ink: #f2f1ec; --ink-2: #c3c2b7; --muted: #898781;
     --hairline: #383835; --accent: #5598e7; --quote-bg: #232322;
+    --callout-bg: rgba(85, 152, 231, 0.12);
   }}
 }}
 * {{ box-sizing: border-box; }}
@@ -62,6 +64,26 @@ blockquote {{
   border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0;
 }}
 blockquote p {{ margin: 0; }}
+.callout {{
+  margin: 1.6rem 0; padding: 1rem 1.3rem; border-radius: 10px;
+  background: var(--callout-bg); border-left: 4px solid var(--accent);
+  font-size: 1.05rem;
+}}
+.callout p {{ margin: 0; }}
+.pullquote {{
+  margin: 2.6rem auto; max-width: 36rem; text-align: center;
+  font-size: 1.45rem; line-height: 1.45; font-style: italic; color: var(--ink);
+}}
+.pullquote::before, .pullquote::after {{
+  content: ""; display: block; width: 4rem; height: 2px;
+  background: var(--accent); margin: 1.1rem auto; opacity: .55;
+}}
+.thesis {{
+  margin: 2rem 0; padding: 1.4rem 1.6rem; border: 2px solid var(--accent);
+  border-radius: 14px; background: var(--callout-bg);
+  font-size: 1.12rem; line-height: 1.65;
+}}
+.thesis p {{ margin: 0; }}
 img {{ max-width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--hairline); margin: 1.2rem 0; }}
 .tablewrap {{ overflow-x: auto; margin: 1.4rem 0; }}
 table {{ border-collapse: collapse; font-size: .92rem; min-width: 100%; }}
@@ -121,6 +143,19 @@ def build(article_dir: str) -> str:
     body = markdown.markdown(md, extensions=["tables", "fenced_code"])
     body = re.sub(r"<table>", '<div class="tablewrap"><table>', body)
     body = re.sub(r"</table>", "</table></div>", body)
+
+    # Typographic upgrades, keyed off the article's own quote conventions:
+    #  - italic-only one-liner blockquotes -> large-type editorial pull-quotes
+    #  - the thesis blockquote -> featured box
+    #  - remaining (bold-claim) blockquotes -> tinted callout cards
+    body = re.sub(
+        r"<blockquote>\s*<p><em>(.*?)</em></p>\s*</blockquote>",
+        r'<div class="pullquote">\1</div>', body, flags=re.S)
+    body = re.sub(
+        r"<blockquote>(\s*<p><strong>An LLM request is not one monolithic.*?)</blockquote>",
+        r'<div class="thesis">\1</div>', body, flags=re.S)
+    body = body.replace("<blockquote>", '<div class="callout">')
+    body = body.replace("</blockquote>", "</div>")
 
     slug = key.split("/")[-1]
     canonical = f"https://triunalabs.github.io/research/articles/{slug}/"

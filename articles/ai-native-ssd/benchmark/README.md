@@ -51,6 +51,23 @@ reclaim the disk space.
   measures the size of the prize (the movement-waste ratio), not an
   in-storage compute implementation.
 
+## Proposed Method C (needs hardware we don't have)
+
+The article proposes a third method for computational-storage hardware
+(SmartSSD-class NVMe + FPGA): send the query + probe list to the device
+(~KBs down), score fp16 dot products in-device, return only top-20
+candidates per probed cluster (~300 KB up), merge on the host.
+
+Predictions to test: bus traffic < 1 MB (waste ratio < 10:1 vs ~19,500:1
+for Method B), wall time ≤ Method B, lower energy per query despite weaker
+device compute. Falsifier: if in-device scoring is slower or more
+energy-hungry than shipping the clusters out, vector scoring belongs on
+the host and the article's retrieval-plane claim weakens accordingly.
+
+The corpus format (cluster-contiguous fp16, `offsets.npy` + `centroids.npy`)
+is the device-side input contract. If you have CSD dev hardware and run
+this, open an issue or PR — results welcome either way.
+
 ## Honest limitations
 
 One query shape, synthetic clustered data, a single consumer drive, no

@@ -757,6 +757,32 @@ This measurement is deliberately modest: one query shape, synthetic data, a soft
 
 ---
 
+## 🔭 The Benchmark I Cannot Run Yet
+
+The measurement above stops exactly where my hardware stops.
+
+I do not own a computational storage device. So the natural third method is, for now, a proposal — stated precisely enough to be run, and to be proven wrong.
+
+**Method C — in-storage candidate scoring** (requires a SmartSSD-class device: NVMe storage plus an FPGA or equivalent accelerator in the same module):
+
+1. The host sends the query vector and the 8-cluster probe list to the device — a few kilobytes **down**.
+2. The device scans the probed clusters internally, computes the fp16 dot products next to the NAND, and returns only the top-20 candidates **per cluster** — roughly 300 KB **up**.
+3. The host merges 160 candidates into the final top-20.
+
+**What to measure**, against Methods A and B on the same corpus: bytes crossing the bus in each direction, wall time, host CPU utilization, and — with a wall-power meter — energy per query.
+
+**Falsifiable predictions:**
+
+- Bus traffic falls from ~0.8 GB to **under 1 MB** — the movement-waste ratio drops from ~19,500 : 1 to under 10 : 1. Three more orders of magnitude, gone.
+- Wall time stays at or below Method B's, because computational-storage designs can expose more aggregate internal NAND bandwidth than the external link, and the scoring math is trivial next to the transport it eliminates.
+- Energy per query drops **even though** the device's compute is far weaker than a host CPU or GPU — because the energy bill was always the transport, not the arithmetic.
+
+**And what would falsify the thesis:** if in-device scoring turns out slower or more energy-hungry than shipping the clusters out, then vector scoring belongs on the host after all — and the retrieval-plane claim weakens to cache persistence and data management only. That result would be worth publishing too.
+
+The corpus generator, query harness, and baseline results are public in the repository. If you have computational-storage development hardware and want to run Method C, the baseline is waiting.
+
+---
+
 ## 🧩 What Would an AI-Native SSD Actually Look Like?
 
 If we designed storage specifically around Transformer inference instead of adapting a conventional SSD, I would divide it into several logical planes.

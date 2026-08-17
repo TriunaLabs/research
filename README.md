@@ -8,7 +8,7 @@ Where an article includes measurements, the repository contains the scripts that
 
 | Article | Author | Published | Summary | Reproducible code |
 | --- | --- | --- | --- | --- |
-| [From KV-Cache SSDs to AI-Native SSDs: What Comes Next?](articles/ai-native-ssd/README.md) | Paul Woll | 2026-08-17 | AI is dissolving the boundary between storage and compute. From today's SSD-backed KV-cache tiers to a proposed five-plane AI-native storage architecture — with a laptop-reproducible measurement of the data-movement waste it targets. | [benchmark](articles/ai-native-ssd/benchmark/) |
+| [Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage](articles/ai-native-ssd/README.md) | Paul Woll | 2026-08-17 | AI is dissolving the boundary between storage and compute. From today's SSD-backed KV-cache tiers to a proposed five-plane AI-native storage architecture — with a laptop-reproducible measurement of the data-movement waste it targets. | [benchmark](articles/ai-native-ssd/benchmark/) |
 
 ## Licensing
 

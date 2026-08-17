@@ -1,4 +1,4 @@
-# 🧠 From KV-Cache SSDs to AI-Native SSDs: What Comes Next?
+# 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage
 
 When we think about Large Language Models, we tend to picture GPUs.
 
@@ -493,7 +493,7 @@ It is becoming:
 
 ---
 
-## 🧭 The Next Step: Route the Work, Not Just the Data
+## 🧭 The Next Step: Stop Assuming Everything Belongs on the GPU
 
 This is where I think the most interesting research direction appears.
 

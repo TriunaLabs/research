@@ -51,22 +51,39 @@ reclaim the disk space.
   measures the size of the prize (the movement-waste ratio), not an
   in-storage compute implementation.
 
-## Proposed Method C (needs hardware we don't have)
+## Method C: in-storage scoring — harness ready, hardware wanted
 
 The article proposes a third method for computational-storage hardware
 (SmartSSD-class NVMe + FPGA): send the query + probe list to the device
 (~KBs down), score fp16 dot products in-device, return only top-20
 candidates per probed cluster (~300 KB up), merge on the host.
 
-Predictions to test: bus traffic < 1 MB (waste ratio < 10:1 vs ~19,500:1
-for Method B), wall time ≤ Method B, lower energy per query despite weaker
-device compute. Falsifier: if in-device scoring is slower or more
-energy-hungry than shipping the clusters out, vector scoring belongs on
-the host and the article's retrieval-plane claim weakens accordingly.
+[`method_c.py`](method_c.py) ships everything except the FPGA kernel:
 
-The corpus format (cluster-contiguous fp16, `offsets.npy` + `centroids.npy`)
-is the device-side input contract. If you have CSD dev hardware and run
-this, open an issue or PR — results welcome either way.
+- the **wire protocol** (the exact bytes that would cross PCIe),
+- a **NumPy reference implementation** of the device-side computation —
+  the functional spec a hardware kernel must match,
+- a **simulated device** in a separate process that exclusively owns the
+  corpus and speaks only the protocol (bus bytes counted across a real
+  process boundary),
+- a **`HardwareDevice` stub** — implement `query(request) -> response`
+  against your device SDK and the harness does the rest.
+
+```bash
+python method_c.py --dir <corpus dir> --backend sim
+```
+
+Validated with the simulated backend (protocol facts, not hardware claims):
+**2,092 B down + 329,600 B up = 8.1 : 1 waste ratio** (vs ~19,500 : 1 for
+Method B), top-20 identical to Method A ground truth
+(`matches_method_a_top20: true`).
+
+Still needing real hardware: wall time and energy per query. A CPU
+simulating an FPGA proves nothing about either. Falsifier: if in-device
+scoring is slower or more energy-hungry than shipping clusters out, vector
+scoring belongs on the host and the article's retrieval-plane claim weakens
+accordingly. If you have CSD dev hardware and run this, open an issue or
+PR — results welcome either way.
 
 ## Honest limitations
 

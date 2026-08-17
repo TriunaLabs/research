@@ -771,15 +771,18 @@ I do not own a computational storage device. So the natural third method is, for
 
 **What to measure**, against Methods A and B on the same corpus: bytes crossing the bus in each direction, wall time, host CPU utilization, and — with a wall-power meter — energy per query.
 
-**Falsifiable predictions:**
+**One prediction is already verifiable at the protocol level.** I implemented the Method C wire protocol with a simulated device — a separate process that exclusively owns the corpus and speaks only the protocol, so the bus bytes are counted across a real boundary. Result: **2,092 bytes down, 329,600 bytes up — a movement-waste ratio of 8.1 : 1**, with the returned top-20 identical to the full-scan ground truth. The "under 10 : 1" claim is protocol arithmetic, not speculation.
 
-- Bus traffic falls from ~0.8 GB to **under 1 MB** — the movement-waste ratio drops from ~19,500 : 1 to under 10 : 1. Three more orders of magnitude, gone.
+**The predictions that still need hardware:**
+
 - Wall time stays at or below Method B's, because computational-storage designs can expose more aggregate internal NAND bandwidth than the external link, and the scoring math is trivial next to the transport it eliminates.
 - Energy per query drops **even though** the device's compute is far weaker than a host CPU or GPU — because the energy bill was always the transport, not the arithmetic.
 
+A CPU simulating an FPGA proves nothing about either — those two columns stay honestly empty until someone runs this on real silicon.
+
 **And what would falsify the thesis:** if in-device scoring turns out slower or more energy-hungry than shipping the clusters out, then vector scoring belongs on the host after all — and the retrieval-plane claim weakens to cache persistence and data management only. That result would be worth publishing too.
 
-The corpus generator, query harness, and baseline results are public in the repository. If you have computational-storage development hardware and want to run Method C, the baseline is waiting.
+Everything except the FPGA kernel is public in the repository: the corpus generator, the baseline harnesses, the Method C wire protocol, a NumPy reference implementation of the device-side computation, and the simulated backend that verifies the contract. A hardware owner implements one class and gets a complete experiment. The baseline is waiting.
 
 ---
 

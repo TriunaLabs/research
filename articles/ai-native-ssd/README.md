@@ -36,6 +36,8 @@ Everything that follows is the evidence: what already ships, what research demon
 
 > *HBM wins on bandwidth. Flash wins on capacity. AI architecture increasingly lives in the gap.*
 
+![Fastest AI memory vs. densest AI storage: NVIDIA B200 HBM3e at 8 TB/s and 180 GB, Micron 6600 ION at 245.76 TB and 13.7 GB/s](images/01-the-gap.svg)
+
 ---
 
 ## ⚙️ First: What Is an LLM Actually Doing?
@@ -227,6 +229,8 @@ Increasingly, AI infrastructure has to treat memory as a hierarchy:
 Each step generally offers more capacity.
 
 Each step generally sacrifices latency and bandwidth.
+
+![The AI memory hierarchy: capacity grows downward from GPU SRAM to network storage while bandwidth shrinks; the AI-native opportunity is deciding near the data and sending back only the winners](images/04-memory-hierarchy.svg)
 
 Modern inference software is beginning to explicitly manage that hierarchy.
 
@@ -747,6 +751,8 @@ The results:
 
 Same question. Same answer. **128× less data movement. 228× faster.**
 
+![Log-scale dot plot of bytes moved per query: naive full scan 102.4 GB, index-guided 0.80 GB, in-storage scoring 331 KB, against a 40 KB useful answer](images/02-bytes-moved.svg)
+
 Two observations from this measurement matter for the argument of this article.
 
 First, the naive scan's effective throughput was only 0.29 GB/s — well below the drive's 2.1 GB/s raw read speed — because the host CPU had to both receive *and* score every byte. Moving data to compute makes the host pay twice.
@@ -795,6 +801,8 @@ Everything except the FPGA kernel is public in the repository: the corpus genera
 ## 🧩 What Would an AI-Native SSD Actually Look Like?
 
 If we designed storage specifically around Transformer inference instead of adapting a conventional SSD, I would divide it into several logical planes.
+
+![Today's SSD (NAND plus controller) versus a proposed AI-native device with routing, compute, retrieval, KV, and weight planes behind a high-speed fabric interface](images/03-five-planes.svg)
 
 ---
 

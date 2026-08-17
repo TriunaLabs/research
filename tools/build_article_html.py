@@ -140,6 +140,9 @@ def build(article_dir: str) -> str:
     title_match = re.search(r"^#\s+(?:\S+\s)?(.+)$", md, re.M)   # strip leading emoji
     title = title_match.group(1).strip()
 
+    # the template renders its own styled byline; drop the markdown one
+    md = re.sub(r"^\*By Paul Woll.*\*$\n?", "", md, flags=re.M)
+
     body = markdown.markdown(md, extensions=["tables", "fenced_code"])
     body = re.sub(r"<table>", '<div class="tablewrap"><table>', body)
     body = re.sub(r"</table>", "</table></div>", body)

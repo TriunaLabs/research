@@ -1,5 +1,7 @@
 # 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage
 
+*By Paul Woll · Triuna Labs Research · August 17, 2026*
+
 When we think about Large Language Models, we tend to picture GPUs.
 
 That makes sense. Modern generative AI would not exist at its current scale without them.

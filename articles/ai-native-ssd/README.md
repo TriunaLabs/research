@@ -28,6 +28,12 @@ It actually follows a research path stretching back almost three decades.
 
 And LLMs may provide one of the strongest reasons yet to pursue it.
 
+**Here is the thesis of this article, stated plainly:**
+
+> **An LLM request is not one monolithic computation — it is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it — GPU, CPU, or increasingly intelligent storage — and the cost that decides the route is data movement. The next major AI optimization is not "compute faster." It is "move less."**
+
+Everything that follows is the evidence: what already ships, what research demonstrates, what I measured on my own hardware, and what remains genuinely speculative.
+
 > *HBM wins on bandwidth. Flash wins on capacity. AI architecture increasingly lives in the gap.*
 
 ---

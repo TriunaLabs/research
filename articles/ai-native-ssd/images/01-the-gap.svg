@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="Segoe UI, system-ui, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="Segoe UI, system-ui, sans-serif">
   <rect width="1200" height="630" fill="#fcfcfb"/>
 
   <text x="60" y="66" font-size="31" font-weight="700" fill="#0b0b0b">The fastest place to compute is not the cheapest place to keep data.</text>

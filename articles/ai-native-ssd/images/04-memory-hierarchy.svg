@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="Segoe UI, system-ui, sans-serif">
+  <rect width="1200" height="630" fill="#fcfcfb"/>
+  <defs>
+    <marker id="arrg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#898781"/>
+    </marker>
+    <marker id="arro" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#eb6834"/>
+    </marker>
+  </defs>
+
+  <text x="60" y="62" font-size="30" font-weight="700" fill="#0b0b0b">The emerging AI memory hierarchy</text>
+  <text x="60" y="93" font-size="16.5" fill="#52514e">Capacity grows downward. Bandwidth shrinks. The expensive move is hauling bytes back up.</text>
+
+  <!-- tiers (blue ordinal ramp, dark = fast) -->
+  <rect x="330" y="150" width="200" height="56" rx="8" fill="#104281"/>
+  <text x="430" y="174" font-size="15.5" font-weight="600" fill="#ffffff" text-anchor="middle">GPU SRAM / cache</text>
+  <text x="430" y="194" font-size="13" fill="#cde2fb" text-anchor="middle">MBs &#183; extreme bandwidth</text>
+
+  <rect x="270" y="214" width="320" height="56" rx="8" fill="#1c5cab"/>
+  <text x="430" y="238" font-size="15.5" font-weight="600" fill="#ffffff" text-anchor="middle">GPU HBM</text>
+  <text x="430" y="258" font-size="13" fill="#cde2fb" text-anchor="middle">~180 GB per GPU &#183; ~8 TB/s</text>
+
+  <rect x="210" y="278" width="440" height="56" rx="8" fill="#2a78d6"/>
+  <text x="430" y="302" font-size="15.5" font-weight="600" fill="#ffffff" text-anchor="middle">CPU DRAM</text>
+  <text x="430" y="322" font-size="13" fill="#cde2fb" text-anchor="middle">TBs per server &#183; hundreds of GB/s</text>
+
+  <rect x="150" y="342" width="560" height="56" rx="8" fill="#5598e7" stroke="#eb6834" stroke-width="3"/>
+  <text x="430" y="366" font-size="15.5" font-weight="700" fill="#0b0b0b" text-anchor="middle">NVMe SSD</text>
+  <text x="430" y="386" font-size="13" fill="#0b0b0b" text-anchor="middle">up to 245 TB per drive &#183; tens of GB/s</text>
+
+  <rect x="90" y="406" width="680" height="56" rx="8" fill="#86b6ef"/>
+  <text x="430" y="430" font-size="15.5" font-weight="600" fill="#0b0b0b" text-anchor="middle">Network / object storage</text>
+  <text x="430" y="450" font-size="13" fill="#0b0b0b" text-anchor="middle">PBs &#183; slower still</text>
+
+  <!-- spill-down annotation -->
+  <line x1="830" y1="165" x2="830" y2="300" stroke="#898781" stroke-width="2" marker-end="url(#arrg)"/>
+  <text x="850" y="222" font-size="14.5" fill="#52514e">Weights, KV cache, embeddings and</text>
+  <text x="850" y="242" font-size="14.5" fill="#52514e">agent state spill down as HBM fills.</text>
+
+  <!-- decide-near-data annotation -->
+  <path d="M 740 370 C 900 370, 900 242, 620 242" fill="none" stroke="#eb6834" stroke-width="2.5" marker-end="url(#arro)"/>
+  <text x="850" y="330" font-size="14.5" font-weight="600" fill="#0b0b0b">The AI-native opportunity:</text>
+  <text x="850" y="350" font-size="14.5" fill="#52514e">decide near the data, and send back</text>
+  <text x="850" y="370" font-size="14.5" fill="#52514e">up only the winners &#8212; KBs, not GBs.</text>
+
+  <text x="60" y="545" font-size="19" font-weight="600" fill="#0b0b0b">Every tier down buys capacity and costs bandwidth &#8212; so stop hauling the bytes that don&#8217;t matter.</text>
+
+  <text x="60" y="608" font-size="12.5" fill="#898781">Tier figures: NVIDIA HGX B200 docs; Micron 6600 ION specs &#183; see article for citations</text>
+  <text x="1140" y="608" font-size="12.5" fill="#898781" text-anchor="end">Triuna Labs Research &#183; triunalabs.com</text>
+</svg>

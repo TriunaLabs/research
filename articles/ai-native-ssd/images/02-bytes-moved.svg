@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="Segoe UI, system-ui, sans-serif">
+  <rect width="1200" height="630" fill="#fcfcfb"/>
+
+  <text x="60" y="64" font-size="30" font-weight="700" fill="#0b0b0b">Same question. Same top-20 answer. Three ways to move the bytes.</text>
+  <text x="60" y="96" font-size="16.5" fill="#52514e">Bytes crossing the storage &#8594; host boundary for one retrieval query &#183; 50M embeddings &#183; 102.4 GB corpus &#183; consumer NVMe &#183; log scale</text>
+
+  <!-- decade gridlines (10 KB .. 1 TB), plot x 330..1145 -->
+  <g stroke="#e1e0d9" stroke-width="1">
+    <line x1="330" y1="180" x2="330" y2="460"/><line x1="431.9" y1="180" x2="431.9" y2="460"/>
+    <line x1="533.8" y1="180" x2="533.8" y2="460"/><line x1="635.6" y1="180" x2="635.6" y2="460"/>
+    <line x1="737.5" y1="180" x2="737.5" y2="460"/><line x1="839.4" y1="180" x2="839.4" y2="460"/>
+    <line x1="941.3" y1="180" x2="941.3" y2="460"/><line x1="1043.1" y1="180" x2="1043.1" y2="460"/>
+    <line x1="1145" y1="180" x2="1145" y2="460"/>
+  </g>
+  <g font-size="13" fill="#898781" text-anchor="middle">
+    <text x="330" y="484">10 KB</text><text x="431.9" y="484">100 KB</text>
+    <text x="533.8" y="484">1 MB</text><text x="635.6" y="484">10 MB</text>
+    <text x="737.5" y="484">100 MB</text><text x="839.4" y="484">1 GB</text>
+    <text x="941.3" y="484">10 GB</text><text x="1043.1" y="484">100 GB</text>
+    <text x="1145" y="484">1 TB</text>
+  </g>
+  <line x1="330" y1="460" x2="1145" y2="460" stroke="#c3c2b7" stroke-width="1"/>
+
+  <!-- reference: the useful answer, 40 KB -->
+  <line x1="392.4" y1="196" x2="392.4" y2="460" stroke="#898781" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="392.4" y="186" font-size="13.5" font-weight="600" fill="#52514e" text-anchor="middle">the answer itself: 40 KB</text>
+
+  <!-- Method A -->
+  <text x="60" y="250" font-size="17" font-weight="600" fill="#0b0b0b">Method A &#8212; naive full scan</text>
+  <text x="60" y="271" font-size="13" fill="#898781">measured &#183; 355 s</text>
+  <line x1="330" y1="255" x2="1145" y2="255" stroke="#e1e0d9" stroke-width="1"/>
+  <circle cx="1044.2" cy="255" r="10" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"/>
+  <text x="1026" y="248" font-size="17" font-weight="700" fill="#0b0b0b" text-anchor="end">102.4 GB</text>
+  <text x="1026" y="267" font-size="13.5" fill="#52514e" text-anchor="end">2,500,000 : 1 vs the answer</text>
+
+  <!-- Method B -->
+  <text x="60" y="330" font-size="17" font-weight="600" fill="#0b0b0b">Method B &#8212; index-guided</text>
+  <text x="60" y="351" font-size="13" fill="#898781">measured &#183; 1.6 s &#183; identical top-20</text>
+  <line x1="330" y1="335" x2="1145" y2="335" stroke="#e1e0d9" stroke-width="1"/>
+  <circle cx="829.7" cy="335" r="10" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"/>
+  <text x="848" y="328" font-size="17" font-weight="700" fill="#0b0b0b">0.80 GB</text>
+  <text x="848" y="347" font-size="13.5" fill="#52514e">19,500 : 1</text>
+
+  <!-- Method C -->
+  <text x="60" y="410" font-size="17" font-weight="600" fill="#0b0b0b">Method C &#8212; in-storage scoring</text>
+  <text x="60" y="431" font-size="13" fill="#898781">protocol-verified &#183; identical top-20</text>
+  <line x1="330" y1="415" x2="1145" y2="415" stroke="#e1e0d9" stroke-width="1"/>
+  <circle cx="484.9" cy="415" r="10" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"/>
+  <text x="503" y="408" font-size="17" font-weight="700" fill="#0b0b0b">331 KB</text>
+  <text x="503" y="427" font-size="13.5" fill="#52514e">8.1 : 1 &#8212; needs real silicon for time &amp; energy</text>
+
+  <text x="60" y="560" font-size="20" font-weight="600" fill="#0b0b0b">Every step left is data that never had to move. The last step lives inside the drive.</text>
+
+  <text x="60" y="608" font-size="12.5" fill="#898781">Measured on a consumer laptop (WD_BLACK SN7100). Scripts, corpus generator, and raw results: github.com/TriunaLabs/research</text>
+  <text x="1140" y="608" font-size="12.5" fill="#898781" text-anchor="end">Triuna Labs Research &#183; triunalabs.com</text>
+</svg>

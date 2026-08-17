@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" font-family="Segoe UI, system-ui, sans-serif">
+  <rect width="1200" height="630" fill="#fcfcfb"/>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#898781"/>
+    </marker>
+  </defs>
+
+  <text x="60" y="62" font-size="30" font-weight="700" fill="#0b0b0b">What if the drive were designed for transformer inference?</text>
+  <text x="60" y="93" font-size="16.5" fill="#52514e">Today's SSD vs. a proposed AI-native storage device organized as five specialized planes</text>
+
+  <!-- Left: today -->
+  <text x="70" y="146" font-size="15" font-weight="600" fill="#898781" letter-spacing="1">TODAY</text>
+  <rect x="60" y="160" width="300" height="350" rx="14" fill="#ffffff" stroke="#e1e0d9"/>
+  <rect x="90" y="196" width="240" height="60" rx="8" fill="#f0efec" stroke="#c3c2b7"/>
+  <text x="210" y="232" font-size="17" font-weight="600" fill="#52514e" text-anchor="middle">Controller</text>
+  <rect x="90" y="276" width="240" height="200" rx="8" fill="#f0efec" stroke="#c3c2b7"/>
+  <text x="210" y="372" font-size="18" font-weight="600" fill="#52514e" text-anchor="middle">NAND flash</text>
+  <text x="210" y="396" font-size="14" fill="#898781" text-anchor="middle">stores bytes, ships them all out</text>
+  <text x="210" y="545" font-size="15" fill="#52514e" text-anchor="middle">Storage stores. Everything travels.</text>
+
+  <line x1="385" y1="335" x2="445" y2="335" stroke="#898781" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- Right: proposed -->
+  <text x="480" y="146" font-size="15" font-weight="600" fill="#898781" letter-spacing="1">PROPOSED: AI-NATIVE</text>
+  <rect x="470" y="160" width="670" height="350" rx="14" fill="#ffffff" stroke="#e1e0d9"/>
+
+  <rect x="500" y="180" width="610" height="40" rx="8" fill="#f0efec" stroke="#c3c2b7"/>
+  <text x="805" y="206" font-size="15" font-weight="600" fill="#52514e" text-anchor="middle">High-speed fabric interface &#8212; queries in &#8595; &#183; only winners out &#8593; (~KBs)</text>
+
+  <rect x="500" y="230" width="610" height="48" rx="8" fill="#2a78d6" fill-opacity="0.13" stroke="#2a78d6"/>
+  <rect x="500" y="230" width="6" height="48" rx="3" fill="#2a78d6"/>
+  <text x="520" y="250" font-size="16.5" font-weight="700" fill="#0b0b0b">Routing plane</text>
+  <text x="520" y="270" font-size="14" fill="#52514e">the scheduler: where should this piece of work happen &#8212; here, CPU, or GPU?</text>
+
+  <rect x="500" y="286" width="610" height="44" rx="8" fill="#ffffff" stroke="#e1e0d9"/>
+  <rect x="500" y="286" width="6" height="44" rx="3" fill="#eb6834"/>
+  <text x="520" y="304" font-size="15.5" font-weight="600" fill="#0b0b0b">Compute plane</text>
+  <text x="520" y="323" font-size="13.5" fill="#52514e">matrix-vector ops, filtering, compression &#8212; beside the data</text>
+
+  <rect x="500" y="338" width="610" height="44" rx="8" fill="#ffffff" stroke="#e1e0d9"/>
+  <rect x="500" y="338" width="6" height="44" rx="3" fill="#1baf7a"/>
+  <text x="520" y="356" font-size="15.5" font-weight="600" fill="#0b0b0b">Retrieval plane</text>
+  <text x="520" y="375" font-size="13.5" fill="#52514e">vector search where the embeddings live</text>
+
+  <rect x="500" y="390" width="610" height="44" rx="8" fill="#ffffff" stroke="#e1e0d9"/>
+  <rect x="500" y="390" width="6" height="44" rx="3" fill="#eda100"/>
+  <text x="520" y="408" font-size="15.5" font-weight="600" fill="#0b0b0b">KV plane</text>
+  <text x="520" y="427" font-size="13.5" fill="#52514e">persistent context: append, score, evict, reuse</text>
+
+  <rect x="500" y="442" width="610" height="44" rx="8" fill="#ffffff" stroke="#e1e0d9"/>
+  <rect x="500" y="442" width="6" height="44" rx="3" fill="#e87ba4"/>
+  <text x="520" y="460" font-size="15.5" font-weight="600" fill="#0b0b0b">Weight plane</text>
+  <text x="520" y="479" font-size="13.5" fill="#52514e">dense, read-optimized model storage; MoE placement &amp; prefetch</text>
+
+  <text x="600" y="560" font-size="19" font-weight="600" fill="#0b0b0b" text-anchor="middle">At that point, &#8220;SSD&#8221; undersells what it has become.</text>
+
+  <text x="60" y="608" font-size="12.5" fill="#898781">Research context: SNIA computational storage; InstInfer; HillInfer; SmartANNS &#8212; see article for citations</text>
+  <text x="1140" y="608" font-size="12.5" fill="#898781" text-anchor="end">Triuna Labs Research &#183; triunalabs.com</text>
+</svg>

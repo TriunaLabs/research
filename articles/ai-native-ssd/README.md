@@ -22,7 +22,7 @@ That enormous gap between **hundreds of gigabytes of extraordinarily fast memory
 
 > **What if storage stopped being merely the place where AI data waits for the GPU?**
 
-What if some AI workloads were processed near the storage itself — while an intelligent storage tier decided what actually needed to reach expensive GPU memory?
+What if some AI workloads were processed near the storage itself, while an intelligent storage tier decided what actually needed to reach expensive GPU memory?
 
 That may sound futuristic.
 
@@ -32,7 +32,7 @@ And LLMs may provide one of the strongest reasons yet to pursue it.
 
 **Here is the thesis of this article, stated plainly:**
 
-> **An LLM request is not one monolithic computation — it is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it — GPU, CPU, or increasingly intelligent storage — and the cost that decides the route is data movement. The next major AI optimization is not "compute faster." It is "move less."**
+> **An LLM request is not one monolithic computation. It is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it (GPU, CPU, or increasingly intelligent storage), and the cost that decides the route is data movement. The next major AI optimization is not "compute faster." It is "move less."**
 
 Everything that follows is the evidence: what already ships, what research demonstrates, what I measured on my own hardware, and what remains genuinely speculative.
 
@@ -336,7 +336,7 @@ That principle becomes extremely interesting for AI.
 
 ## 📐 Computational Storage Became an Architecture
 
-The Storage Networking Industry Association — SNIA — has developed computational-storage architecture, API and interoperability work around this concept.
+The Storage Networking Industry Association (SNIA) has developed computational-storage architecture, API and interoperability work around this concept.
 
 Computational storage broadly describes systems that couple computation with storage in order to:
 
@@ -357,7 +357,7 @@ Then LLMs arrived.
 
 Several recent research projects are particularly relevant.
 
-And notably, this research now spans a wide range of systems — from **datacenter-scale serving architectures to memory-constrained AI PCs and edge systems**.
+And notably, this research now spans a wide range of systems, from **datacenter-scale serving architectures to memory-constrained AI PCs and edge systems**.
 
 That breadth matters.
 
@@ -377,7 +377,7 @@ The host CPU performs high-level coordination while SmartSSDs execute portions o
 
 Research:
 
-[SmartANNS — USENIX ATC 2024](https://www.usenix.org/system/files/atc24-tian.pdf)
+[SmartANNS (USENIX ATC 2024)](https://www.usenix.org/system/files/atc24-tian.pdf)
 
 This is particularly relevant to RAG.
 
@@ -436,23 +436,23 @@ Importantly, the work targets **memory-constrained AI PCs**, demonstrating that 
 The system groups KV pairs into larger blocks, predicts future accesses and coordinates SSD I/O with GPU computation.
 
 At a 128K-token context the authors report **up to 3.1× faster inference** and **up to
-98% less KV-cache memory**, with accuracy comparable to the unmodified model — their
+98% less KV-cache memory**, with accuracy comparable to the unmodified model. Their
 own accuracy tables show it beating INT4 KV-cache quantisation substantially, which is
 the usual way people buy memory back.
 
 Two details are worth carrying forward. The paper measures that **loading a 1K-token
-KV cache (128 MB) from SSD takes about 40 ms — nearly half a decode step**, which is
+KV cache (128 MB) from SSD takes about 40 ms, nearly half a decode step**, which is
 what "storage became part of inference" looks like as a number. And they find roughly
 **81% similarity in block selection between consecutive iterations**, which is what
 makes speculative prefetching work: attention sparsity is not random, it has temporal
 locality a system can exploit.
 
 Most striking, they report SSD-backed serving landing within **11% of fully in-memory
-throughput** — the entire KV cache on flash, for a tenth of the speed.
+throughput**: the entire KV cache on flash, for a tenth of the speed.
 
 Research:
 
-[SolidAttention — USENIX FAST 2026](https://www.usenix.org/conference/fast26/presentation/zheng)
+[SolidAttention (USENIX FAST 2026)](https://www.usenix.org/conference/fast26/presentation/zheng)
 
 The important conceptual shift is this:
 
@@ -693,7 +693,7 @@ Later neural-network accelerator research similarly highlighted how fetching mod
 
 Useful references include:
 
-[Computing's Energy Problem (and what we can do about it) — Mark Horowitz, ISSCC 2014](https://ieeexplore.ieee.org/document/6757323)
+[Computing's Energy Problem (and what we can do about it): Mark Horowitz, ISSCC 2014](https://ieeexplore.ieee.org/document/6757323)
 
 [EIE: Efficient Inference Engine on Compressed Deep Neural Network](https://arxiv.org/abs/1602.01528)
 
@@ -715,7 +715,7 @@ The correct comparison is:
 
 For some workloads, the answer will be no.
 
-For others — filtering, retrieval, cache scoring, compression, sparse selection and similar data-reduction operations — that tradeoff could become very attractive.
+For others, such as filtering, retrieval, cache scoring, compression, sparse selection and similar data-reduction operations, that tradeoff could become very attractive.
 
 The same principle could eventually apply to KV cache.
 
@@ -747,13 +747,13 @@ And the system avoids paying the bandwidth and energy cost of moving data simply
 
 Claims about data movement deserve numbers, so I measured this on ordinary consumer hardware: a laptop with 40 GB of RAM and a WD_BLACK SN7100 NVMe SSD (~2.1 GB/s measured sequential read on this machine).
 
-The setup: **50 million synthetic document embeddings** — 1024 dimensions, fp16, generated with realistic cluster structure and stored in an IVF-style cluster-grouped layout. That is **102.4 GB** on disk, deliberately 2.5× larger than RAM so the operating system's page cache cannot quietly fake the results. Every scan is structurally forced to hit the drive.
+The setup: **50 million synthetic document embeddings** at 1024 dimensions, fp16, generated with realistic cluster structure and stored in an IVF-style cluster-grouped layout. That is **102.4 GB** on disk, deliberately 2.5× larger than RAM so the operating system's page cache cannot quietly fake the results. Every scan is structurally forced to hit the drive.
 
 Then one top-20 similarity query, answered two ways:
 
-**Method A — Naive full scan.** Stream the entire corpus from SSD to CPU and score everything. This is "move the bytes to the compute."
+**Method A: Naive full scan.** Stream the entire corpus from SSD to CPU and score everything. This is "move the bytes to the compute."
 
-**Method B — Index-guided.** Score the query against 1,024 cluster centroids (a few kilobytes of data), then read only the 8 most promising clusters — about 0.8% of the corpus. This is a software stand-in for "decide near the data, and move only what matters."
+**Method B: Index-guided.** Score the query against 1,024 cluster centroids (a few kilobytes of data), then read only the 8 most promising clusters, about 0.8% of the corpus. This is a software stand-in for "decide near the data, and move only what matters."
 
 The results:
 
@@ -770,29 +770,29 @@ Same question. Same answer. **128× less data movement. 228× faster.**
 
 Two observations from this measurement matter for the argument of this article.
 
-First, the naive scan's effective throughput was only 0.29 GB/s — well below the drive's 2.1 GB/s raw read speed — because the host CPU had to both receive *and* score every byte. Moving data to compute makes the host pay twice.
+First, the naive scan's effective throughput was only 0.29 GB/s, well below the drive's 2.1 GB/s raw read speed, because the host CPU had to both receive *and* score every byte. Moving data to compute makes the host pay twice.
 
 Second, and more importantly: even the *indexed* query still moved roughly **19,500 bytes for every byte of useful answer**. The index knows which clusters to read, but the host must still import entire clusters to find the 20 vectors it wants.
 
 That residual gap is precisely the territory an AI-native retrieval plane would claim. A drive that could score candidates internally and return only the winners would attack the remaining four orders of magnitude.
 
-A back-of-envelope energy note makes the same point from the physics side. Using commonly cited figures of a few pJ per bit for PCIe-class transfer and Horowitz-class estimates for DRAM staging, the naive query's 102 GB of movement costs on the order of **tens of joules** — while the fp16 arithmetic that actually decided the answer costs orders of magnitude less. The energy bill of that query was overwhelmingly a *transportation* bill.
+A back-of-envelope energy note makes the same point from the physics side. Using commonly cited figures of a few pJ per bit for PCIe-class transfer and Horowitz-class estimates for DRAM staging, the naive query's 102 GB of movement costs on the order of **tens of joules**, while the fp16 arithmetic that actually decided the answer costs orders of magnitude less. The energy bill of that query was overwhelmingly a *transportation* bill.
 
 **And this is no longer only an estimate.** The SolidAttention authors measured energy
 directly, and the result is counterintuitive enough to be worth stating carefully:
-their SSD-backed system draws **higher peak power** than the in-memory baseline —
-unsurprising, since it is actively hitting flash — yet consumes **3.68 joules per token
+their SSD-backed system draws **higher peak power** than the in-memory baseline
+(unsurprising, since it is actively hitting flash), yet consumes **3.68 joules per token
 against llama.cpp's 5.37, a 46% improvement**.
 
 Higher power, less energy. The system finishes sooner and idles less, so the integral
 comes out ahead of the peak. That is the single most useful empirical result for this
 article's argument: **adding storage traffic to an inference path made it more energy
-efficient, not less** — because what it removed was waste, and waste is what the energy
+efficient, not less**, because what it removed was waste, and waste is what the energy
 was being spent on.
 
-This measurement is deliberately modest: one query shape, synthetic data, a software index, a consumer drive. It does not demonstrate computational storage — no FPGA was involved. What it measures is the size of the prize: the ratio between the bytes a query touches and the bytes it needs. That ratio is what every system in the research above — from SmartANNS to HillInfer — is built to shrink.
+This measurement is deliberately modest: one query shape, synthetic data, a software index, a consumer drive. It does not demonstrate computational storage; no FPGA was involved. What it measures is the size of the prize: the ratio between the bytes a query touches and the bytes it needs. That ratio is what every system in the research above, from SmartANNS to HillInfer, is built to shrink.
 
-> *A software index closed two orders of magnitude of waste. Four more orders of magnitude are still on the table — and they live inside the drive.*
+> *A software index closed two orders of magnitude of waste. Four more orders of magnitude are still on the table, and they live inside the drive.*
 
 ---
 
@@ -800,26 +800,26 @@ This measurement is deliberately modest: one query shape, synthetic data, a soft
 
 The measurement above stops exactly where my hardware stops.
 
-I do not own a computational storage device. So the natural third method is, for now, a proposal — stated precisely enough to be run, and to be proven wrong.
+I do not own a computational storage device. So the natural third method is, for now, a proposal, stated precisely enough to be run, and to be proven wrong.
 
-**Method C — in-storage candidate scoring** (requires a SmartSSD-class device: NVMe storage plus an FPGA or equivalent accelerator in the same module):
+**Method C: in-storage candidate scoring** (requires a SmartSSD-class device: NVMe storage plus an FPGA or equivalent accelerator in the same module):
 
-1. The host sends the query vector and the 8-cluster probe list to the device — a few kilobytes **down**.
-2. The device scans the probed clusters internally, computes the fp16 dot products next to the NAND, and returns only the top-20 candidates **per cluster** — roughly 300 KB **up**.
+1. The host sends the query vector and the 8-cluster probe list to the device, a few kilobytes **down**.
+2. The device scans the probed clusters internally, computes the fp16 dot products next to the NAND, and returns only the top-20 candidates **per cluster**, roughly 300 KB **up**.
 3. The host merges 160 candidates into the final top-20.
 
-**What to measure**, against Methods A and B on the same corpus: bytes crossing the bus in each direction, wall time, host CPU utilization, and — with a wall-power meter — energy per query.
+**What to measure**, against Methods A and B on the same corpus: bytes crossing the bus in each direction, wall time, host CPU utilization, and, with a wall-power meter, energy per query.
 
-**One prediction is already verifiable at the protocol level.** I implemented the Method C wire protocol with a simulated device — a separate process that exclusively owns the corpus and speaks only the protocol, so the bus bytes are counted across a real boundary. Result: **2,092 bytes down, 329,600 bytes up — a movement-waste ratio of 8.1 : 1**, with the returned top-20 identical to the full-scan ground truth. The "under 10 : 1" claim is protocol arithmetic, not speculation.
+**One prediction is already verifiable at the protocol level.** I implemented the Method C wire protocol with a simulated device: a separate process that exclusively owns the corpus and speaks only the protocol, so the bus bytes are counted across a real boundary. Result: **2,092 bytes down, 329,600 bytes up, a movement-waste ratio of 8.1 : 1**, with the returned top-20 identical to the full-scan ground truth. The "under 10 : 1" claim is protocol arithmetic, not speculation.
 
 **The predictions that still need hardware:**
 
 - Wall time stays at or below Method B's, because computational-storage designs can expose more aggregate internal NAND bandwidth than the external link, and the scoring math is trivial next to the transport it eliminates.
-- Energy per query drops **even though** the device's compute is far weaker than a host CPU or GPU — because the energy bill was always the transport, not the arithmetic.
+- Energy per query drops **even though** the device's compute is far weaker than a host CPU or GPU, because the energy bill was always the transport, not the arithmetic.
 
-A CPU simulating an FPGA proves nothing about either — those two columns stay honestly empty until someone runs this on real silicon.
+A CPU simulating an FPGA proves nothing about either, so those two columns stay honestly empty until someone runs this on real silicon.
 
-**And what would falsify the thesis:** if in-device scoring turns out slower or more energy-hungry than shipping the clusters out, then vector scoring belongs on the host after all — and the retrieval-plane claim weakens to cache persistence and data management only. That result would be worth publishing too.
+**And what would falsify the thesis:** if in-device scoring turns out slower or more energy-hungry than shipping the clusters out, then vector scoring belongs on the host after all, and the retrieval-plane claim weakens to cache persistence and data management only. That result would be worth publishing too.
 
 Everything except the FPGA kernel is public in the repository: the corpus generator, the baseline harnesses, the Method C wire protocol, a NumPy reference implementation of the device-side computation, and the simulated backend that verifies the contract. A hardware owner implements one class and gets a complete experiment. The baseline is waiting.
 
@@ -827,12 +827,12 @@ Everything except the FPGA kernel is public in the repository: the corpus genera
 
 ## 🔬 Independent Signal: Model Weights Are Becoming a Placement Problem
 
-Everything above concerns **retrieval** — embeddings, KV cache, the bytes a query
+Everything above concerns **retrieval**: embeddings, KV cache, the bytes a query
 touches. While I was writing it, a second and quite different workload began exhibiting
 the same architecture problem.
 
 **A note on timing, because it changes how much weight this deserves.** I came across
-this *while writing the sections above* — after the thesis was formed and the benchmark
+this *while writing the sections above*, after the thesis was formed and the benchmark
 had already been run. I was not looking for supporting evidence. Its author was not
 arguing about storage architecture, and nothing in it references any of this. **That is
 precisely what makes it useful: it is convergence, not corroboration.** An argument that
@@ -842,7 +842,7 @@ citations chosen to fit.
 In July 2026 Moonshot AI released **Kimi K3**, a mixture-of-experts model of roughly
 **2.8 trillion parameters**. Its sparsity is the interesting part: the model holds
 **896 experts per layer and activates 16 of them per token**, so only about
-**104 billion of 2.78 trillion parameters — under 4% — participate in producing any
+**104 billion of 2.78 trillion parameters, under 4%, participate in producing any
 given token.**
 
 An independent developer then published **`kimi-k3-in-c`**, a portable C99
@@ -856,7 +856,7 @@ reported memory ladder is worth reading as a sequence rather than a headline:
 | Resident set only | **113.49 GB** | experts never loaded |
 | **Measured peak RSS** | **8.24 GB** | trunk streaming |
 
-Roughly **1.447 TB of routed experts are never resident at all** — they stay on storage
+Roughly **1.447 TB of routed experts are never resident at all**. They stay on storage
 and are multiplied straight out of their packed 4-bit form. About **96.3% of the
 expert parameters never enter memory.**
 
@@ -866,7 +866,7 @@ expert parameters never enter memory.**
 experts, scoring anything, or making decisions. It is a fast disk being read.
 
 **What changed is the host software.** The runtime became **model-aware** enough to
-decide which parts of an enormous model deserve memory and which can stay on storage —
+decide which parts of an enormous model deserve memory and which can stay on storage:
 dense trunk resident, routed experts streamed, quantised formats consumed in place.
 That is data placement driven by *model semantics*.
 
@@ -882,7 +882,7 @@ tested memory configurations.
 
 Storage stopped being where the model waits and became **a material component of
 inference execution time**. Once that is true, *where a weight lives and when it moves*
-starts determining performance — which is precisely the point at which architecture
+starts determining performance, which is precisely the point at which architecture
 gets interesting.
 
 ### Two workloads, one principle
@@ -897,20 +897,20 @@ Different workloads. **Same systems principle: work out what matters before payi
 move everything else.**
 
 The symmetry is closer than it first appears. My index-guided query touched **0.8 GB of
-a 102.4 GB corpus — about 0.8%.** Kimi activates **under 4% of its parameters per
+a 102.4 GB corpus, about 0.8%.** Kimi activates **under 4% of its parameters per
 token**. Both are cases where the useful fraction is small, known in advance, and
-identifiable by something that understands the data's structure — an IVF index in one
+identifiable by something that understands the data's structure: an IVF index in one
 case, MoE routing in the other.
 
 My measurement demonstrates the opportunity on the **Retrieval Plane**. Kimi exposes
-the same pressure arriving on the **Weight Plane** — independently, from a completely
+the same pressure arriving on the **Weight Plane**, independently, from a completely
 different direction, and without anyone setting out to prove a point about storage
 architecture.
 
 That is what makes the five planes below look less like a wish list and more like one
 architecture inferred from several workload classes.
 
-![Two workloads reduced before transfer: a 102.4 GB embedding corpus narrowed to 0.80 GB and a proposed 331 KB, alongside a 1.56 TB Kimi K3 checkpoint narrowed to ~104 billion active parameters and an 8.24 GB resident set — both following decide, reduce, move, compute](images/05-same-problem.svg)
+![Two workloads reduced before transfer: a 102.4 GB embedding corpus narrowed to 0.80 GB and a proposed 331 KB, alongside a 1.56 TB Kimi K3 checkpoint narrowed to ~104 billion active parameters and an 8.24 GB resident set, both following decide, reduce, move, compute](images/05-same-problem.svg)
 
 ---
 
@@ -937,17 +937,17 @@ An AI-native storage tier could understand model structure and optimize for:
 * Prefetching
 * Model-version sharing
 
-And — taking the lesson from the Kimi implementation directly — the placement decisions
+And, taking the lesson from the Kimi implementation directly, the placement decisions
 a sparse model actually requires:
 
-* **Dense-trunk residency** — which layers stay in memory permanently
-* **Routed-expert streaming** — which weights are read straight from storage in their
+* **Dense-trunk residency**: which layers stay in memory permanently
+* **Routed-expert streaming**: which weights are read straight from storage in their
   packed quantized form and never made resident
-* **Expert hotness** — observed activation frequency, not just static classification
-* **Expert-cache allocation** — how a fixed memory budget is divided between pinning
+* **Expert hotness**: observed activation frequency, not just static classification
+* **Expert-cache allocation**: how a fixed memory budget is divided between pinning
   dense layers and caching frequently-activated experts
 * **Layer-level residency policy** and **access tracing** to inform it
-* **Memory-budget-aware placement** — the same model laid out differently on a 16 GB
+* **Memory-budget-aware placement**: the same model laid out differently on a 16 GB
   machine than on a 512 GB one
 
 That last group is the difference between a storage tier that merely knows *where*
@@ -1052,7 +1052,7 @@ An AI-native storage device could include a scheduler that understands questions
 * What is the energy cost of each possible route?
 * Does the GPU need this data at all?
 
-Sparse models add a second category of question — placement rather than transport:
+Sparse models add a second category of question, placement rather than transport:
 
 * Should this layer remain resident?
 * Should these experts stay cold?
@@ -1060,7 +1060,7 @@ Sparse models add a second category of question — placement rather than transp
 * Is scarce DRAM better spent pinning dense layers or caching hot experts?
 * Can the next weight access be predicted from the routing decision already made?
 
-Those are **semantic placement decisions**, not device I/O decisions — and they are
+Those are **semantic placement decisions**, not device I/O decisions, and they are
 what turns the Routing Plane from a traffic controller into the part of the system
 that decides what the hierarchy should look like for *this* model under *this* memory
 budget.
@@ -1134,7 +1134,7 @@ If a dense model had to retrieve its entire parameter set from NAND for every ge
 **But sparsity changes the equation, and this is where the argument gets interesting.**
 
 A sparse mixture-of-experts model may need only a small fraction of its total weight
-space for any given computation — Kimi K3 activates under 4% of its parameters per
+space for any given computation. Kimi K3 activates under 4% of its parameters per
 token. The question stops being *"can flash feed a model?"* and becomes **"how much of
 the model actually has to cross the boundary?"**
 
@@ -1168,7 +1168,7 @@ That is the architectural principle behind computational storage:
 > **The latency column is the one that explains the architecture.** Bandwidth says an
 > SSD moves tens of gigabytes per second. Latency says each individual request costs
 > **roughly 500× a DRAM access and 500,000× an L1 hit**. That gap is why fine-grained
-> random reads are fatal while coarse sequential ones are survivable — and it is why
+> random reads are fatal while coarse sequential ones are survivable, and it is why
 > every system in this article converges on the same two moves: **make the transfers
 > bigger, and start them earlier.** SolidAttention consolidates KV pairs into blocks
 > and prefetches speculatively. My benchmark reads whole clusters rather than
@@ -1203,7 +1203,7 @@ This exists.
 
 ### Stage 3A: AI-Aware Host Orchestration
 
-**The model runtime understands topology, locality and residency — and decides what
+**The model runtime understands topology, locality and residency, and decides what
 lives in memory versus storage.**
 
 This exists today. `kimi-k3-in-c` is a working example: the storage device is passive,
@@ -1215,7 +1215,7 @@ but the host software is model-aware enough to keep a dense trunk resident and s
 **That intelligence begins moving into storage software, controllers and accelerators
 rather than living entirely in the host.**
 
-This is where the research above sits — HillInfer scoring KV importance inside a
+This is where the research above sits: HillInfer scoring KV importance inside a
 SmartSSD FPGA, InstInfer placing attention near the cache, SmartANNS searching shards
 on-device.
 
@@ -1250,7 +1250,7 @@ Latency-critical active state belongs there.
 **And a distinction worth drawing precisely:** being able to *execute* a model and
 being able to *serve* it efficiently are different engineering problems. Running 2.78
 trillion parameters from flash on a CPU is a remarkable demonstration of the first. It
-says almost nothing about the second — throughput, latency and dense numerical
+says almost nothing about the second: throughput, latency and dense numerical
 performance remain exactly why GPUs exist.
 
 Which reinforces the router idea rather than undermining it: the system should choose
@@ -1353,14 +1353,14 @@ The better question is:
 > **How much of an LLM system can be moved toward hundreds of terabytes of storage so that the GPU performs only the work that genuinely requires GPU-class compute and bandwidth?**
 
 That creates a very different research agenda: build storage that understands models,
-context, KV caches, sparsity, retrieval, locality and energy cost — then give it enough
+context, KV caches, sparsity, retrieval, locality and energy cost, then give it enough
 specialized computation to act on that knowledge.
 
 But an agenda is only useful if it can be proven wrong. So here are the five claims this
 article rests on, each stated as something a reader with the right hardware could refute.
 I have measured none of them directly. The first is the one I consider most likely to fail.
 
-### H1 — Placement
+### H1: Placement
 
 **Device-side narrowing beats host-side narrowing by a margin that grows with the ratio of
 corpus size to interconnect bandwidth.**
@@ -1371,21 +1371,21 @@ can do that. Nothing in it demonstrates that the selection has to happen inside 
 
 *Refuted if:* host-side selection over ordinary NVMe reads captures ≥95% of the benefit at
 realistic corpus sizes. In that case near-storage compute is complexity without payoff, and
-the honest conclusion collapses to a narrower one — route the work, but route it on the host.
+the honest conclusion collapses to a narrower one: route the work, but route it on the host.
 
-### H2 — Energy crossover
+### H2: Energy crossover
 
 **There is a selectivity threshold below which the controller energy spent avoiding a transfer
 is less than the energy of the transfer itself.**
 
 This article argues that moving less data saves energy. It measures bytes, not joules. The
-inference is reasonable — published figures put off-chip data movement one to two orders of
-magnitude above the arithmetic it feeds — but reasonable is not measured.
+inference is reasonable, since published figures put off-chip data movement one to two orders of
+magnitude above the arithmetic it feeds, but reasonable is not measured.
 
 *Refuted if:* no crossover exists at selectivities achievable by real indexes, or controller
 idle power swamps the transfer saving at realistic duty cycles.
 
-### H3 — Controller ceiling
+### H3: Controller ceiling
 
 **Present SmartSSD-class compute is sufficient for IVF scan and top-k selection, but not for
 attention over long context.**
@@ -1394,7 +1394,7 @@ attention over long context.**
 grows, without host assistance. That would mean the compute plane is less constrained than I
 assume here, and more of the workload moves than this article predicts.
 
-### H4 — Sparsity routing
+### H4: Sparsity routing
 
 **For mixture-of-experts models, expert-selection metadata is small enough to route on-device,
 so bytes moved track active experts rather than total parameters.**
@@ -1406,7 +1406,7 @@ article's thesis, which is precisely what makes it useful as evidence.
 *Refuted if:* routing metadata itself becomes bandwidth-bound at scale, or expert locality is
 poor enough that the working set approaches the full model.
 
-### H5 — Capacity is not bandwidth
+### H5: Capacity is not bandwidth
 
 **The binding constraint migrates from capacity to per-device read bandwidth within the next
 two device generations.**
@@ -1447,7 +1447,7 @@ Vector retrieval and sparse model inference look like entirely different workloa
 are converging on the same architectural problem: **an enormous pool of data sits in a
 cheap capacity tier, and only a small portion of it is useful to the next computation.**
 A 102 GB embedding corpus where 0.8% answers the query. A 2.78 trillion-parameter model
-where under 4% computes the token. The opportunity in both cases is identical — identify
+where under 4% computes the token. The opportunity in both cases is identical: identify
 that portion **before** paying to move everything else.
 
 Perhaps the next major AI hardware optimization is not simply:
@@ -1464,25 +1464,25 @@ It is:
 
 ### Transformer and LLM Memory Architecture
 
-[Attention Is All You Need — Vaswani et al.](https://arxiv.org/abs/1706.03762)
+[Attention Is All You Need (Vaswani et al.)](https://arxiv.org/abs/1706.03762)
 
 [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)
 
 [vLLM / PagedAttention](https://arxiv.org/abs/2309.06180)
 
-[NVIDIA — Large-Scale LLM Inference and KV Cache Offload](https://developer.nvidia.com/blog/accelerate-large-scale-llm-inference-and-kv-cache-offload-with-cpu-gpu-memory-sharing/)
+[NVIDIA: Large-Scale LLM Inference and KV Cache Offload](https://developer.nvidia.com/blog/accelerate-large-scale-llm-inference-and-kv-cache-offload-with-cpu-gpu-memory-sharing/)
 
-[NVIDIA Dynamo — KV Cache Offloading](https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading)
+[NVIDIA Dynamo: KV Cache Offloading](https://docs.nvidia.com/dynamo/backends/v-llm/kv-cache-offloading)
 
-[NVIDIA Dynamo — FlexKV](https://docs.nvidia.com/dynamo/latest/kv-managers/flex-kv)
+[NVIDIA Dynamo: FlexKV](https://docs.nvidia.com/dynamo/latest/kv-managers/flex-kv)
 
 ---
 
 ### Computational Storage History
 
-[Active Disks: Programming Model, Algorithms and Evaluation — 1998](https://dl.acm.org/doi/10.1145/384265.291026)
+[Active Disks: Programming Model, Algorithms and Evaluation (1998)](https://dl.acm.org/doi/10.1145/384265.291026)
 
-[Active Storage for Large-Scale Data Mining and Multimedia — VLDB 1998](https://www.vldb.org/conf/1998/p062.pdf)
+[Active Storage for Large-Scale Data Mining and Multimedia (VLDB 1998)](https://www.vldb.org/conf/1998/p062.pdf)
 
 [Past, Present and Future of Computational Storage: A Survey](https://arxiv.org/abs/2112.09691)
 
@@ -1494,13 +1494,13 @@ It is:
 
 ### LLM + SSD / Near-Storage Research
 
-[SmartANNS — SmartSSD Approximate Nearest Neighbor Search, USENIX ATC 2024](https://www.usenix.org/system/files/atc24-tian.pdf)
+[SmartANNS: SmartSSD Approximate Nearest Neighbor Search, USENIX ATC 2024](https://www.usenix.org/system/files/atc24-tian.pdf)
 
 [InstInfer: In-Storage Attention Offloading](https://arxiv.org/abs/2409.04992)
 
 [Near-Storage Processing for Generative LLM Inference](https://arxiv.org/abs/2502.09921)
 
-[SolidAttention — SSD-Based Long-Context LLM Serving, USENIX FAST 2026](https://www.usenix.org/conference/fast26/presentation/zheng)
+[SolidAttention: SSD-Based Long-Context LLM Serving, USENIX FAST 2026](https://www.usenix.org/conference/fast26/presentation/zheng)
 
 [HillInfer: Hierarchical KV Eviction Using SmartSSD](https://arxiv.org/abs/2602.18750)
 
@@ -1510,7 +1510,7 @@ It is:
 
 ### Energy and Data Movement
 
-[Computing's Energy Problem (and what we can do about it) — Mark Horowitz, ISSCC 2014](https://ieeexplore.ieee.org/document/6757323)
+[Computing's Energy Problem (and what we can do about it): Mark Horowitz, ISSCC 2014](https://ieeexplore.ieee.org/document/6757323)
 
 [EIE: Efficient Inference Engine on Compressed Deep Neural Network](https://arxiv.org/abs/1602.01528)
 
@@ -1520,17 +1520,17 @@ It is:
 
 ### Out-of-Core Model Inference
 
-[Kimi K3 — Moonshot AI](https://huggingface.co/moonshotai) — the model itself: ~2.8T
+[Kimi K3 (Moonshot AI)](https://huggingface.co/moonshotai): the model itself, ~2.8T
 parameters, 896 experts per layer, 16 activated per token. Released July 2026.
 
-[`kimi-k3-in-c`](https://github.com/FareedKhan-dev/kimi-k3-in-c) — an **independent**
+[`kimi-k3-in-c`](https://github.com/FareedKhan-dev/kimi-k3-in-c): an **independent**
 C99 CPU implementation, not produced or endorsed by Moonshot AI. Source of the memory
 ladder, the 8.24 GB peak RSS figure, and the reported I/O share of execution time.
 
 ### Current Hardware
 
-[Micron 6600 ION — Up to 245.76 TB](https://www.micron.com/products/storage/ssd/data-center-ssd/6600-ion)
+[Micron 6600 ION (up to 245.76 TB)](https://www.micron.com/products/storage/ssd/data-center-ssd/6600-ion)
 
-[Micron 9550 — PCIe Gen5 SSD](https://www.micron.com/products/storage/ssd/data-center-ssd/9550-ssd)
+[Micron 9550 (PCIe Gen5 SSD)](https://www.micron.com/products/storage/ssd/data-center-ssd/9550-ssd)
 
 [NVIDIA HGX B200 Memory Specifications](https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html)

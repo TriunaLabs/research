@@ -1,4 +1,4 @@
-"""Method C: in-storage candidate scoring — device contract + harness.
+"""Method C: in-storage candidate scoring: device contract + harness.
 
 The article proposes Method C for computational-storage hardware (SmartSSD-
 class NVMe + FPGA): the host sends the query and a probe list DOWN, the
@@ -9,7 +9,7 @@ UP. This file ships everything except the hardware:
   * a NumPy reference implementation of the device-side computation
     (the functional spec an FPGA kernel must match),
   * a simulated device in a separate process that exclusively owns the
-    corpus file — the host harness never touches the data, so protocol
+    corpus file, so the host harness never touches the data, so protocol
     bytes are counted across a real process boundary,
   * a stub class where real device I/O plugs in.
 
@@ -18,7 +18,7 @@ must equal Method B/A's) and the true bus-byte count (~KBs down, ~300 KB up
 vs 0.8 GB for Method B).
 
 What it does NOT establish: timing or energy. A host CPU simulating an FPGA
-proves nothing about either — those columns stay empty until someone runs
+proves nothing about either, so those columns stay empty until someone runs
 this against real hardware. Implement HardwareDevice and send results.
 
 Usage:
@@ -207,7 +207,7 @@ def main():
         "top20_ids": top_ids,
     }
     if args.backend == "sim":
-        result["timing_note"] = ("simulation on host CPU — validates protocol "
+        result["timing_note"] = ("simulation on host CPU, validates protocol "
                                  "and correctness only, NOT a hardware timing claim")
     else:
         result["seconds"] = round(elapsed, 3)

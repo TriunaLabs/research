@@ -2,13 +2,13 @@
   <rect width="1200" height="630" fill="#fcfcfb"/>
 
   <text x="60" y="66" font-size="31" font-weight="700" fill="#0b0b0b">The fastest place to compute is not the cheapest place to keep data.</text>
-  <text x="60" y="98" font-size="17" fill="#52514e">Fastest AI memory vs. densest AI storage, 2026 — shipping hardware, vendor-listed figures</text>
+  <text x="60" y="98" font-size="17" fill="#52514e">Fastest AI memory vs. densest AI storage, 2026: shipping hardware, vendor-listed figures</text>
 
   <!-- Left card: GPU HBM -->
   <rect x="60" y="140" width="480" height="360" rx="14" fill="#ffffff" stroke="#e1e0d9"/>
   <rect x="60" y="140" width="480" height="8" rx="4" fill="#2a78d6"/>
   <text x="90" y="196" font-size="15" font-weight="600" fill="#898781" letter-spacing="1">GPU MEMORY</text>
-  <text x="90" y="224" font-size="19" font-weight="600" fill="#0b0b0b">NVIDIA B200 — HBM3e</text>
+  <text x="90" y="224" font-size="19" font-weight="600" fill="#0b0b0b">NVIDIA B200 (HBM3e)</text>
 
   <text x="90" y="316" font-size="64" font-weight="700" fill="#0b0b0b">8 TB/s</text>
   <text x="90" y="348" font-size="17" fill="#52514e">memory bandwidth</text>
@@ -20,7 +20,7 @@
   <rect x="660" y="140" width="480" height="360" rx="14" fill="#ffffff" stroke="#e1e0d9"/>
   <rect x="660" y="140" width="480" height="8" rx="4" fill="#eb6834"/>
   <text x="690" y="196" font-size="15" font-weight="600" fill="#898781" letter-spacing="1">FLASH STORAGE</text>
-  <text x="690" y="224" font-size="19" font-weight="600" fill="#0b0b0b">Micron 6600 ION — one drive</text>
+  <text x="690" y="224" font-size="19" font-weight="600" fill="#0b0b0b">Micron 6600 ION, one drive</text>
 
   <text x="690" y="316" font-size="64" font-weight="700" fill="#0b0b0b">245.76 TB</text>
   <text x="690" y="348" font-size="17" fill="#52514e">capacity per drive</text>

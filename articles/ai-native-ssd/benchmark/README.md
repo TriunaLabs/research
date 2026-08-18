@@ -2,7 +2,7 @@
 
 The measurement behind the "A Measurement Anyone Can Reproduce" section of
 [the article](../README.md): one top-20 similarity query over a 102.4 GB
-embedding corpus, answered two ways — naive full scan vs. index-guided reads —
+embedding corpus, answered two ways, naive full scan vs. index-guided reads,
 to measure the gap between bytes *moved* and bytes *needed*.
 
 ## Results (as measured)
@@ -23,7 +23,7 @@ Raw numbers: [results.json](results.json).
 
 Requirements: Python 3.11+, NumPy, and **~103 GB of free disk** on a drive
 you want to measure. The corpus is deliberately generated larger than RAM so
-the OS page cache cannot serve the scans from memory — on a machine with more
+the OS page cache cannot serve the scans from memory. On a machine with more
 than ~50 GB RAM, scale `N_VECTORS` up accordingly.
 
 ```bash
@@ -42,16 +42,16 @@ reclaim the disk space.
   (noise norm ~0.7 vs. unit centroids) and stored cluster-contiguous
   (IVF-style layout).
 - The index-guided query runs **first**, against clusters in the low half of
-  the file — the page cache holds only the just-written file tail, so those
+  the file, since the page cache holds only the just-written file tail, so those
   reads are cold. The full scan is cold by construction (file is 2.5x RAM).
 - The naive scan's effective throughput (~0.29 GB/s) is well below the
   drive's raw read speed because the host must receive *and* score every
-  byte — that gap is part of the point.
+  byte, and that gap is part of the point.
 - This is a software index on a host CPU, not computational storage. It
   measures the size of the prize (the movement-waste ratio), not an
   in-storage compute implementation.
 
-## Method C: in-storage scoring — harness ready, hardware wanted
+## Method C: in-storage scoring, harness ready, hardware wanted
 
 The article proposes a third method for computational-storage hardware
 (SmartSSD-class NVMe + FPGA): send the query + probe list to the device
@@ -61,12 +61,12 @@ candidates per probed cluster (~300 KB up), merge on the host.
 [`method_c.py`](method_c.py) ships everything except the FPGA kernel:
 
 - the **wire protocol** (the exact bytes that would cross PCIe),
-- a **NumPy reference implementation** of the device-side computation —
+- a **NumPy reference implementation** of the device-side computation,
   the functional spec a hardware kernel must match,
 - a **simulated device** in a separate process that exclusively owns the
   corpus and speaks only the protocol (bus bytes counted across a real
   process boundary),
-- a **`HardwareDevice` stub** — implement `query(request) -> response`
+- a **`HardwareDevice` stub**: implement `query(request) -> response`
   against your device SDK and the harness does the rest.
 
 ```bash
@@ -83,7 +83,7 @@ simulating an FPGA proves nothing about either. Falsifier: if in-device
 scoring is slower or more energy-hungry than shipping clusters out, vector
 scoring belongs on the host and the article's retrieval-plane claim weakens
 accordingly. If you have CSD dev hardware and run this, open an issue or
-PR — results welcome either way.
+PR. Results welcome either way.
 
 ## Honest limitations
 

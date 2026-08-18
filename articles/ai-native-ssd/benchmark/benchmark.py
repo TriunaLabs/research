@@ -42,7 +42,7 @@ query /= np.linalg.norm(query)
 q32 = query.astype(np.float32)
 
 def read_exact(f, n):
-    """Read exactly n bytes (or fewer only at EOF) — unbuffered reads may return short."""
+    """Read exactly n bytes (or fewer only at EOF); unbuffered reads may return short."""
     parts = []
     got = 0
     while got < n:

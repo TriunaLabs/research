@@ -723,6 +723,91 @@ footer.site a { color: var(--ink-2); }
 <p><strong>And what would falsify the thesis:</strong> if in-device scoring turns out slower or more energy-hungry than shipping the clusters out, then vector scoring belongs on the host after all — and the retrieval-plane claim weakens to cache persistence and data management only. That result would be worth publishing too.</p>
 <p>Everything except the FPGA kernel is public in the repository: the corpus generator, the baseline harnesses, the Method C wire protocol, a NumPy reference implementation of the device-side computation, and the simulated backend that verifies the contract. A hardware owner implements one class and gets a complete experiment. The baseline is waiting.</p>
 <hr />
+<h2>🔬 Independent Signal: Model Weights Are Becoming a Placement Problem</h2>
+<p>Everything above concerns <strong>retrieval</strong> — embeddings, KV cache, the bytes a query
+touches. While I was writing it, a second and quite different workload began exhibiting
+the same architecture problem.</p>
+<p>In July 2026 Moonshot AI released <strong>Kimi K3</strong>, a mixture-of-experts model of roughly
+<strong>2.8 trillion parameters</strong>. Its sparsity is the interesting part: the model holds
+<strong>896 experts per layer and activates 16 of them per token</strong>, so only about
+<strong>104 billion of 2.78 trillion parameters — under 4% — participate in producing any
+given token.</strong></p>
+<p>An independent developer then published <strong><code>kimi-k3-in-c</code></strong>, a portable C99
+implementation that runs that model on a single CPU, with no GPU and no framework. Its
+reported memory ladder is worth reading as a sequence rather than a headline:</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Memory</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Full bf16 model</td>
+<td><strong>5,560 GB</strong></td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>Shipped checkpoint</td>
+<td><strong>1,560 GB</strong></td>
+<td>experts pre-quantised</td>
+</tr>
+<tr>
+<td>Resident set only</td>
+<td><strong>113.49 GB</strong></td>
+<td>experts never loaded</td>
+</tr>
+<tr>
+<td><strong>Measured peak RSS</strong></td>
+<td><strong>8.24 GB</strong></td>
+<td>trunk streaming</td>
+</tr>
+</tbody>
+</table></div>
+<p>Roughly <strong>1.447 TB of routed experts are never resident at all</strong> — they stay on storage
+and are multiplied straight out of their packed 4-bit form. About <strong>96.3% of the
+expert parameters never enter memory.</strong></p>
+<h3>Be precise about what this does and does not show</h3>
+<p><strong>This is not computational storage. The SSD is entirely passive.</strong> It is not routing
+experts, scoring anything, or making decisions. It is a fast disk being read.</p>
+<p><strong>What changed is the host software.</strong> The runtime became <strong>model-aware</strong> enough to
+decide which parts of an enormous model deserve memory and which can stay on storage —
+dense trunk resident, routed experts streamed, quantised formats consumed in place.
+That is data placement driven by <em>model semantics</em>.</p>
+<p>It is also, plainly, a <strong>feasibility demonstration rather than a serving solution</strong>.
+Running a frontier model from flash on a CPU is not fast, and nobody should read "2.78T
+parameters in 8 GB" as a claim about production throughput.</p>
+<h3>The number that actually matters is the I/O share</h3>
+<p>The headline invites the wrong reading. The important figure in the published memory
+ladder is that <strong>I/O accounts for roughly 41% to 61% of execution time</strong> across the
+tested memory configurations.</p>
+<p>Storage stopped being where the model waits and became <strong>a material component of
+inference execution time</strong>. Once that is true, <em>where a weight lives and when it moves</em>
+starts determining performance — which is precisely the point at which architecture
+gets interesting.</p>
+<h3>Two workloads, one principle</h3>
+<div class="callout">
+<p><strong>My benchmark asks:</strong> why move 102.4 GB of embeddings when a handful of vectors
+produce the answer?</p>
+<p><strong>Kimi asks:</strong> why make 2.78 trillion parameters resident when under 4% of them
+compute the next token?</p>
+</div>
+<p>Different workloads. <strong>Same systems principle: work out what matters before paying to
+move everything else.</strong></p>
+<p>The symmetry is closer than it first appears. My index-guided query touched <strong>0.8 GB of
+a 102.4 GB corpus — about 0.8%.</strong> Kimi activates <strong>under 4% of its parameters per
+token</strong>. Both are cases where the useful fraction is small, known in advance, and
+identifiable by something that understands the data's structure — an IVF index in one
+case, MoE routing in the other.</p>
+<p>My measurement demonstrates the opportunity on the <strong>Retrieval Plane</strong>. Kimi exposes
+the same pressure arriving on the <strong>Weight Plane</strong> — independently, from a completely
+different direction, and without anyone setting out to prove a point about storage
+architecture.</p>
+<p>That is what makes the five planes below look less like a wish list and more like one
+architecture inferred from several workload classes.</p>
+<hr />
 <h2>🧩 What Would an AI-Native SSD Actually Look Like?</h2>
 <p>If we designed storage specifically around Transformer inference instead of adapting a conventional SSD, I would divide it into several logical planes.</p>
 <p><img alt="Today's SSD (NAND plus controller) versus a proposed AI-native device with routing, compute, retrieval, KV, and weight planes behind a high-speed fabric interface" src="images/03-five-planes.svg" /></p>
@@ -737,13 +822,26 @@ footer.site a { color: var(--ink-2); }
 <li>Highly parallel weight reads</li>
 <li>Decompression</li>
 <li>Prefetching</li>
-<li>Hot and cold weight classification</li>
-<li>Mixture-of-Experts placement</li>
-<li>Expert prediction</li>
 <li>Model-version sharing</li>
 </ul>
-<p>The GPU still performs the primary matrix computation.</p>
-<p>But the storage system becomes intelligent about <strong>how those weights reach it</strong>.</p>
+<p>And — taking the lesson from the Kimi implementation directly — the placement decisions
+a sparse model actually requires:</p>
+<ul>
+<li><strong>Dense-trunk residency</strong> — which layers stay in memory permanently</li>
+<li><strong>Routed-expert streaming</strong> — which weights are read straight from storage in their
+  packed quantized form and never made resident</li>
+<li><strong>Expert hotness</strong> — observed activation frequency, not just static classification</li>
+<li><strong>Expert-cache allocation</strong> — how a fixed memory budget is divided between pinning
+  dense layers and caching frequently-activated experts</li>
+<li><strong>Layer-level residency policy</strong> and <strong>access tracing</strong> to inform it</li>
+<li><strong>Memory-budget-aware placement</strong> — the same model laid out differently on a 16 GB
+  machine than on a 512 GB one</li>
+</ul>
+<p>That last group is the difference between a storage tier that merely knows <em>where</em>
+weights are and one that understands <strong>the topology of the model and its observed
+access behaviour</strong>.</p>
+<p>The GPU still performs the primary matrix computation. But the storage system becomes
+intelligent about <strong>which weights reach it, and when</strong>.</p>
 <hr />
 <h3>2. KV Plane</h3>
 <p>KV cache behaves very differently from model weights.</p>
@@ -822,6 +920,18 @@ footer.site a { color: var(--ink-2); }
 <li>What is the energy cost of each possible route?</li>
 <li>Does the GPU need this data at all?</li>
 </ul>
+<p>Sparse models add a second category of question — placement rather than transport:</p>
+<ul>
+<li>Should this layer remain resident?</li>
+<li>Should these experts stay cold?</li>
+<li>Which expert groups activate together, repeatedly?</li>
+<li>Is scarce DRAM better spent pinning dense layers or caching hot experts?</li>
+<li>Can the next weight access be predicted from the routing decision already made?</li>
+</ul>
+<p>Those are <strong>semantic placement decisions</strong>, not device I/O decisions — and they are
+what turns the Routing Plane from a traffic controller into the part of the system
+that decides what the hierarchy should look like for <em>this</em> model under <em>this</em> memory
+budget.</p>
 <p>Then it routes work accordingly.</p>
 <p>That would turn the SSD from:</p>
 <p><strong>NAND + controller</strong></p>
@@ -868,6 +978,15 @@ footer.site a { color: var(--ink-2); }
 <p>An NVIDIA B200 can access its local HBM at up to roughly <strong>8,000 GB/s</strong>.</p>
 <p>These devices exist for different purposes.</p>
 <p>If a dense model had to retrieve its entire parameter set from NAND for every generated token, performance would collapse.</p>
+<p><strong>But sparsity changes the equation, and this is where the argument gets interesting.</strong></p>
+<p>A sparse mixture-of-experts model may need only a small fraction of its total weight
+space for any given computation — Kimi K3 activates under 4% of its parameters per
+token. The question stops being <em>"can flash feed a model?"</em> and becomes <strong>"how much of
+the model actually has to cross the boundary?"</strong></p>
+<p>That is a more useful question than either of the slogans it replaces. Not <em>"SSDs could
+run models"</em>, and not <em>"SSDs are too slow for models"</em>, but: <strong>it depends on what
+fraction must move, and that fraction is a property of the model's architecture rather
+than the drive's.</strong></p>
 <p>An AI-native SSD therefore does <strong>not</strong> win by pretending flash is slow HBM.</p>
 <p>It wins when locality allows it to reduce the amount of information moving across the boundary.</p>
 <p>That is the architectural principle behind computational storage:</p>
@@ -930,9 +1049,18 @@ footer.site a { color: var(--ink-2); }
 <h3>Stage 2: Computational Storage</h3>
 <p><strong>SSD executes filtering, compression, search and specialized computation locally.</strong></p>
 <p>This exists.</p>
-<h3>Stage 3: AI-Aware Storage</h3>
-<p><strong>Storage software and research systems begin understanding AI structures such as KV blocks, embeddings, model weights and expert placement.</strong></p>
-<p>Pieces of this are appearing now.</p>
+<h3>Stage 3A: AI-Aware Host Orchestration</h3>
+<p><strong>The model runtime understands topology, locality and residency — and decides what
+lives in memory versus storage.</strong></p>
+<p>This exists today. <code>kimi-k3-in-c</code> is a working example: the storage device is passive,
+but the host software is model-aware enough to keep a dense trunk resident and stream
+1.45 TB of experts from disk.</p>
+<h3>Stage 3B: AI-Aware Storage Systems</h3>
+<p><strong>That intelligence begins moving into storage software, controllers and accelerators
+rather than living entirely in the host.</strong></p>
+<p>This is where the research above sits — HillInfer scoring KV importance inside a
+SmartSSD FPGA, InstInfer placing attention near the cache, SmartANNS searching shards
+on-device.</p>
 <h3>Stage 4: AI-Native Storage</h3>
 <p><strong>Dedicated KV, retrieval, sparse-compute and routing engines are designed directly into the storage architecture.</strong></p>
 <p>This remains primarily a research and design direction.</p>
@@ -947,6 +1075,14 @@ footer.site a { color: var(--ink-2); }
 <p>Dense matrix multiplication belongs there.</p>
 <p>HBM belongs there.</p>
 <p>Latency-critical active state belongs there.</p>
+<p><strong>And a distinction worth drawing precisely:</strong> being able to <em>execute</em> a model and
+being able to <em>serve</em> it efficiently are different engineering problems. Running 2.78
+trillion parameters from flash on a CPU is a remarkable demonstration of the first. It
+says almost nothing about the second — throughput, latency and dense numerical
+performance remain exactly why GPUs exist.</p>
+<p>Which reinforces the router idea rather than undermining it: the system should choose
+tiers by the characteristics of the workload, not by conviction about which processor
+"runs AI."</p>
 <p>But GPUs are also expensive resources with limited HBM.</p>
 <p>Using them as the destination for every piece of data simply because they are the fastest processors may become increasingly inefficient.</p>
 <p>The alternative is a more intelligent hierarchy.</p>
@@ -1040,6 +1176,12 @@ footer.site a { color: var(--ink-2); }
 <p>But it may become much more than the vault feeding it.</p>
 <p><strong>The line separating storage, memory and compute is already starting to disappear.</strong></p>
 <p>And the enormous capacity gap between HBM and flash suggests there is still a very large architectural space left to explore.</p>
+<p>Vector retrieval and sparse model inference look like entirely different workloads. They
+are converging on the same architectural problem: <strong>an enormous pool of data sits in a
+cheap capacity tier, and only a small portion of it is useful to the next computation.</strong>
+A 102 GB embedding corpus where 0.8% answers the query. A 2.78 trillion-parameter model
+where under 4% computes the token. The opportunity in both cases is identical — identify
+that portion <strong>before</strong> paying to move everything else.</p>
 <p>Perhaps the next major AI hardware optimization is not simply:</p>
 <p><strong>compute faster.</strong></p>
 <p>It is:</p>
@@ -1074,6 +1216,12 @@ footer.site a { color: var(--ink-2); }
 <p><a href="https://arxiv.org/abs/1602.01528">EIE: Efficient Inference Engine on Compressed Deep Neural Network</a></p>
 <p><a href="https://csl.stanford.edu/~christos/publications/2015.ndp.pact.pdf">Practical Near-Data Processing for In-Memory Analytics Frameworks</a></p>
 <hr />
+<h3>Out-of-Core Model Inference</h3>
+<p><a href="https://huggingface.co/moonshotai">Kimi K3 — Moonshot AI</a> — the model itself: ~2.8T
+parameters, 896 experts per layer, 16 activated per token. Released July 2026.</p>
+<p><a href="https://github.com/FareedKhan-dev/kimi-k3-in-c"><code>kimi-k3-in-c</code></a> — an <strong>independent</strong>
+C99 CPU implementation, not produced or endorsed by Moonshot AI. Source of the memory
+ladder, the 8.24 GB peak RSS figure, and the reported I/O share of execution time.</p>
 <h3>Current Hardware</h3>
 <p><a href="https://www.micron.com/products/storage/ssd/data-center-ssd/6600-ion">Micron 6600 ION — Up to 245.76 TB</a></p>
 <p><a href="https://www.micron.com/products/storage/ssd/data-center-ssd/9550-ssd">Micron 9550 — PCIe Gen5 SSD</a></p>

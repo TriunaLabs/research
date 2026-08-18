@@ -161,7 +161,7 @@ def build(article_dir: str) -> str:
     body = body.replace("</blockquote>", "</div>")
 
     slug = key.split("/")[-1]
-    canonical = f"https://triunalabs.github.io/research/articles/{slug}/"
+    canonical = f"https://research.triunalabs.com/articles/{slug}/"
     html = TEMPLATE.format(
         title=title, description=meta["description"], author=meta["author"],
         date=meta["date"], date_human=meta["date_human"], canonical=canonical,

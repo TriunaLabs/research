@@ -1352,22 +1352,72 @@ The better question is:
 
 > **How much of an LLM system can be moved toward hundreds of terabytes of storage so that the GPU performs only the work that genuinely requires GPU-class compute and bandwidth?**
 
-That creates a very different research agenda.
+That creates a very different research agenda: build storage that understands models,
+context, KV caches, sparsity, retrieval, locality and energy cost — then give it enough
+specialized computation to act on that knowledge.
 
-Build storage that understands:
+But an agenda is only useful if it can be proven wrong. So here are the five claims this
+article rests on, each stated as something a reader with the right hardware could refute.
+I have measured none of them directly. The first is the one I consider most likely to fail.
 
-* Models
-* Context
-* KV caches
-* Embeddings
-* Sparsity
-* Retrieval
-* Reuse
-* Locality
-* Energy cost
-* Routing
+### H1 — Placement
 
-Then give it enough specialized computation to act on that knowledge.
+**Device-side narrowing beats host-side narrowing by a margin that grows with the ratio of
+corpus size to interconnect bandwidth.**
+
+This is the load-bearing claim, and the benchmark in this article does not establish it. That
+measurement narrowed 102 GB to 0.80 GB on the *host*, using ordinary NVMe reads. Any system
+can do that. Nothing in it demonstrates that the selection has to happen inside the drive.
+
+*Refuted if:* host-side selection over ordinary NVMe reads captures ≥95% of the benefit at
+realistic corpus sizes. In that case near-storage compute is complexity without payoff, and
+the honest conclusion collapses to a narrower one — route the work, but route it on the host.
+
+### H2 — Energy crossover
+
+**There is a selectivity threshold below which the controller energy spent avoiding a transfer
+is less than the energy of the transfer itself.**
+
+This article argues that moving less data saves energy. It measures bytes, not joules. The
+inference is reasonable — published figures put off-chip data movement one to two orders of
+magnitude above the arithmetic it feeds — but reasonable is not measured.
+
+*Refuted if:* no crossover exists at selectivities achievable by real indexes, or controller
+idle power swamps the transfer saving at realistic duty cycles.
+
+### H3 — Controller ceiling
+
+**Present SmartSSD-class compute is sufficient for IVF scan and top-k selection, but not for
+attention over long context.**
+
+*Refuted if:* InstInfer-class near-storage attention holds its advantage as context length
+grows, without host assistance. That would mean the compute plane is less constrained than I
+assume here, and more of the workload moves than this article predicts.
+
+### H4 — Sparsity routing
+
+**For mixture-of-experts models, expert-selection metadata is small enough to route on-device,
+so bytes moved track active experts rather than total parameters.**
+
+The out-of-core Kimi K3 work is independent signal here: a 2.78-trillion-parameter model where
+under 4% of parameters compute a token. That implementation was not built to test this
+article's thesis, which is precisely what makes it useful as evidence.
+
+*Refuted if:* routing metadata itself becomes bandwidth-bound at scale, or expert locality is
+poor enough that the working set approaches the full model.
+
+### H5 — Capacity is not bandwidth
+
+**The binding constraint migrates from capacity to per-device read bandwidth within the next
+two device generations.**
+
+Capacity has grown far faster than the interface feeding it. A 245 TB drive that cannot be read
+quickly is an archive, not a memory tier.
+
+*Refuted if:* per-device read bandwidth scales with capacity through the next generation, which
+would relieve the pressure this entire argument depends on.
+
+What unites all five is a change in what the system is being asked to optimize for.
 
 The optimization target is no longer simply maximum GPU utilization.
 

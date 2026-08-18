@@ -1195,21 +1195,51 @@ tiers by the characteristics of the workload, not by conviction about which proc
 <div class="callout">
 <p><strong>How much of an LLM system can be moved toward hundreds of terabytes of storage so that the GPU performs only the work that genuinely requires GPU-class compute and bandwidth?</strong></p>
 </div>
-<p>That creates a very different research agenda.</p>
-<p>Build storage that understands:</p>
-<ul>
-<li>Models</li>
-<li>Context</li>
-<li>KV caches</li>
-<li>Embeddings</li>
-<li>Sparsity</li>
-<li>Retrieval</li>
-<li>Reuse</li>
-<li>Locality</li>
-<li>Energy cost</li>
-<li>Routing</li>
-</ul>
-<p>Then give it enough specialized computation to act on that knowledge.</p>
+<p>That creates a very different research agenda: build storage that understands models,
+context, KV caches, sparsity, retrieval, locality and energy cost — then give it enough
+specialized computation to act on that knowledge.</p>
+<p>But an agenda is only useful if it can be proven wrong. So here are the five claims this
+article rests on, each stated as something a reader with the right hardware could refute.
+I have measured none of them directly. The first is the one I consider most likely to fail.</p>
+<h3>H1 — Placement</h3>
+<p><strong>Device-side narrowing beats host-side narrowing by a margin that grows with the ratio of
+corpus size to interconnect bandwidth.</strong></p>
+<p>This is the load-bearing claim, and the benchmark in this article does not establish it. That
+measurement narrowed 102 GB to 0.80 GB on the <em>host</em>, using ordinary NVMe reads. Any system
+can do that. Nothing in it demonstrates that the selection has to happen inside the drive.</p>
+<p><em>Refuted if:</em> host-side selection over ordinary NVMe reads captures ≥95% of the benefit at
+realistic corpus sizes. In that case near-storage compute is complexity without payoff, and
+the honest conclusion collapses to a narrower one — route the work, but route it on the host.</p>
+<h3>H2 — Energy crossover</h3>
+<p><strong>There is a selectivity threshold below which the controller energy spent avoiding a transfer
+is less than the energy of the transfer itself.</strong></p>
+<p>This article argues that moving less data saves energy. It measures bytes, not joules. The
+inference is reasonable — published figures put off-chip data movement one to two orders of
+magnitude above the arithmetic it feeds — but reasonable is not measured.</p>
+<p><em>Refuted if:</em> no crossover exists at selectivities achievable by real indexes, or controller
+idle power swamps the transfer saving at realistic duty cycles.</p>
+<h3>H3 — Controller ceiling</h3>
+<p><strong>Present SmartSSD-class compute is sufficient for IVF scan and top-k selection, but not for
+attention over long context.</strong></p>
+<p><em>Refuted if:</em> InstInfer-class near-storage attention holds its advantage as context length
+grows, without host assistance. That would mean the compute plane is less constrained than I
+assume here, and more of the workload moves than this article predicts.</p>
+<h3>H4 — Sparsity routing</h3>
+<p><strong>For mixture-of-experts models, expert-selection metadata is small enough to route on-device,
+so bytes moved track active experts rather than total parameters.</strong></p>
+<p>The out-of-core Kimi K3 work is independent signal here: a 2.78-trillion-parameter model where
+under 4% of parameters compute a token. That implementation was not built to test this
+article's thesis, which is precisely what makes it useful as evidence.</p>
+<p><em>Refuted if:</em> routing metadata itself becomes bandwidth-bound at scale, or expert locality is
+poor enough that the working set approaches the full model.</p>
+<h3>H5 — Capacity is not bandwidth</h3>
+<p><strong>The binding constraint migrates from capacity to per-device read bandwidth within the next
+two device generations.</strong></p>
+<p>Capacity has grown far faster than the interface feeding it. A 245 TB drive that cannot be read
+quickly is an archive, not a memory tier.</p>
+<p><em>Refuted if:</em> per-device read bandwidth scales with capacity through the next generation, which
+would relieve the pressure this entire argument depends on.</p>
+<p>What unites all five is a change in what the system is being asked to optimize for.</p>
 <p>The optimization target is no longer simply maximum GPU utilization.</p>
 <p>It becomes:</p>
 <div class="callout">

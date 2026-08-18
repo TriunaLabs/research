@@ -32,7 +32,7 @@ And LLMs may provide one of the strongest reasons yet to pursue it.
 
 **Here is the thesis of this article, stated plainly:**
 
-> **An LLM request is not one monolithic computation. It is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it (GPU, CPU, or increasingly intelligent storage), and the cost that decides the route is data movement. The next major AI optimization is not "compute faster." It is "move less."**
+> **An LLM request is not one monolithic computation. It is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it (GPU, CPU, or increasingly intelligent storage), and the cost that decides the route is data movement. The next major optimization is not making the GPU faster. It is reducing how much data has to reach it in the first place.**
 
 Everything that follows is the evidence: what already ships, what research demonstrates, what I measured on my own hardware, and what remains genuinely speculative.
 
@@ -604,7 +604,7 @@ the architecture becomes:
 
 The GPU still performs the operations it is uniquely good at, but it does less housekeeping, sees less irrelevant data, dedicates less HBM to cold state, and the system stops paying bandwidth and energy to move data only to discover it was not needed.
 
-> *Move less data. Use less scarce HBM. Spend less energy. The optimization target may eventually be the route, not just the processor.*
+> *The real gains come from moving less data, keeping less of it in scarce HBM, and spending less energy on traffic that turns out to be unnecessary. The interesting question is becoming the route itself, not just which processor sits at the end of it.*
 
 ---
 
@@ -1239,11 +1239,10 @@ would relieve the pressure this entire argument depends on.
 
 What unites all five is a change in what the system is being asked to optimize for.
 
-The optimization target is no longer simply maximum GPU utilization.
-
-It becomes:
-
-> **Put each operation where it can be performed most efficiently while moving the minimum amount of data required.**
+We should stop treating maximum GPU utilization as the primary success
+metric. The better target is simpler and harder: for every piece of work,
+choose the tier that gets the answer with the least data movement. Sometimes
+that will still be the GPU. Often it will not.
 
 That could mean reducing GPU activity for selected operations.
 
@@ -1270,13 +1269,11 @@ A 102 GB embedding corpus where 0.8% answers the query. A 2.78 trillion-paramete
 where under 4% computes the token. The opportunity in both cases is identical: identify
 that portion **before** paying to move everything else.
 
-Perhaps the next major AI hardware optimization is not simply:
+The useful research question is no longer *how do we make the GPU compute
+faster?* It is *how much of the work can we keep from ever reaching it?*
 
-**compute faster.**
-
-It is:
-
-# **move less.**
+Compute faster is a mature discipline with decades of momentum behind it.
+Move less is still wide open.
 
 ---
 

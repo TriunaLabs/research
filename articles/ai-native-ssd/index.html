@@ -117,7 +117,7 @@ footer.site a { color: var(--ink-2); }
 <p>And LLMs may provide one of the strongest reasons yet to pursue it.</p>
 <p><strong>Here is the thesis of this article, stated plainly:</strong></p>
 <div class="thesis">
-<p><strong>An LLM request is not one monolithic computation. It is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it (GPU, CPU, or increasingly intelligent storage), and the cost that decides the route is data movement. The next major AI optimization is not "compute faster." It is "move less."</strong></p>
+<p><strong>An LLM request is not one monolithic computation. It is many kinds of work, and only some of it needs a GPU. As model state outgrows GPU memory, the winning architecture will route each operation to the cheapest tier that can perform it (GPU, CPU, or increasingly intelligent storage), and the cost that decides the route is data movement. The next major optimization is not making the GPU faster. It is reducing how much data has to reach it in the first place.</strong></p>
 </div>
 <p>Everything that follows is the evidence: what already ships, what research demonstrates, what I measured on my own hardware, and what remains genuinely speculative.</p>
 <div class="pullquote">HBM wins on bandwidth. Flash wins on capacity. AI architecture increasingly lives in the gap.</div>
@@ -550,7 +550,7 @@ throughput</strong>: the entire KV cache on flash, for a tenth of the speed.</p>
 <p>the architecture becomes:</p>
 <p><strong>Storage evaluates cache → retrieves selected blocks → GPU receives hot working set</strong></p>
 <p>The GPU still performs the operations it is uniquely good at, but it does less housekeeping, sees less irrelevant data, dedicates less HBM to cold state, and the system stops paying bandwidth and energy to move data only to discover it was not needed.</p>
-<div class="pullquote">Move less data. Use less scarce HBM. Spend less energy. The optimization target may eventually be the route, not just the processor.</div>
+<div class="pullquote">The real gains come from moving less data, keeping less of it in scarce HBM, and spending less energy on traffic that turns out to be unnecessary. The interesting question is becoming the route itself, not just which processor sits at the end of it.</div>
 <hr />
 <h2>🧪 A Measurement Anyone Can Reproduce</h2>
 <p>Claims about data movement deserve numbers, so I measured this on ordinary consumer hardware: a laptop with 40 GB of RAM and a WD_BLACK SN7100 NVMe SSD (~2.1 GB/s measured sequential read on this machine).</p>
@@ -1070,11 +1070,10 @@ quickly is an archive, not a memory tier.</p>
 <p><em>Refuted if:</em> per-device read bandwidth scales with capacity through the next generation, which
 would relieve the pressure this entire argument depends on.</p>
 <p>What unites all five is a change in what the system is being asked to optimize for.</p>
-<p>The optimization target is no longer simply maximum GPU utilization.</p>
-<p>It becomes:</p>
-<div class="callout">
-<p><strong>Put each operation where it can be performed most efficiently while moving the minimum amount of data required.</strong></p>
-</div>
+<p>We should stop treating maximum GPU utilization as the primary success
+metric. The better target is simpler and harder: for every piece of work,
+choose the tier that gets the answer with the least data movement. Sometimes
+that will still be the GPU. Often it will not.</p>
 <p>That could mean reducing GPU activity for selected operations.</p>
 <p>Reducing HBM pressure.</p>
 <p>Reducing PCIe and fabric traffic.</p>
@@ -1090,10 +1089,10 @@ cheap capacity tier, and only a small portion of it is useful to the next comput
 A 102 GB embedding corpus where 0.8% answers the query. A 2.78 trillion-parameter model
 where under 4% computes the token. The opportunity in both cases is identical: identify
 that portion <strong>before</strong> paying to move everything else.</p>
-<p>Perhaps the next major AI hardware optimization is not simply:</p>
-<p><strong>compute faster.</strong></p>
-<p>It is:</p>
-<h1><strong>move less.</strong></h1>
+<p>The useful research question is no longer <em>how do we make the GPU compute
+faster?</em> It is <em>how much of the work can we keep from ever reaching it?</em></p>
+<p>Compute faster is a mature discipline with decades of momentum behind it.
+Move less is still wide open.</p>
 <hr />
 <h2>📚 Research Trail</h2>
 <h3>Transformer and LLM Memory Architecture</h3>

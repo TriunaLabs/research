@@ -1484,7 +1484,3 @@ ladder, the 8.24 GB peak RSS figure, and the reported I/O share of execution tim
 [Micron 9550 — PCIe Gen5 SSD](https://www.micron.com/products/storage/ssd/data-center-ssd/9550-ssd)
 
 [NVIDIA HGX B200 Memory Specifications](https://docs.nvidia.com/enterprise-reference-architectures/hgx-ai-factory/latest/components.html)
-
----
-
-#AI #LLM #Hardware #ComputationalStorage #GPU #SSD #Semiconductors #AIInfrastructure #DataCenter #EdgeAI #MachineLearning

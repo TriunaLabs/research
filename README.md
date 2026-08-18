@@ -1,5 +1,7 @@
 # Triuna Labs Research
 
+[![tests](https://github.com/TriunaLabs/research/actions/workflows/tests.yml/badge.svg)](https://github.com/TriunaLabs/research/actions/workflows/tests.yml)
+
 Research notes and articles from [Triuna Labs](https://triunalabs.com), published with the code and data behind them, so the claims can be checked.
 
 Where an article includes measurements, the repository contains the scripts that produced them and the raw results. Reproduction instructions live alongside each article.

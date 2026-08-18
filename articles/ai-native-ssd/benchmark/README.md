@@ -91,3 +91,18 @@ One query shape, synthetic clustered data, a single consumer drive, no
 energy instrumentation (the article's energy figures use published
 pJ/bit-class constants, clearly hedged). The orders of magnitude, not the
 exact digits, are the finding.
+
+## Verifying the code without the corpus
+
+```
+pip install numpy psutil pytest
+python -m pytest tests/
+```
+
+The suite generates a ~40 MB corpus with the real generator and runs the
+whole pipeline against it in a few seconds: wire-protocol round trips (the
+article's 2,092-down / 322 KB-up figures are asserted as formulas), the
+device kernel against a brute-force oracle, the process-isolated device
+end to end, the compute-tax throttle, and a pinned regression for the fp16
+query-quantization rank-boundary flip. CI runs it on Linux and Windows on
+every push.

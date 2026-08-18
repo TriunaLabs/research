@@ -877,6 +877,8 @@ architecture.
 That is what makes the five planes below look less like a wish list and more like one
 architecture inferred from several workload classes.
 
+![Two workloads reduced before transfer: a 102.4 GB embedding corpus narrowed to 0.80 GB and a proposed 331 KB, alongside a 1.56 TB Kimi K3 checkpoint narrowed to ~104 billion active parameters and an 8.24 GB resident set — both following decide, reduce, move, compute](images/05-same-problem.svg)
+
 ---
 
 ## 🧩 What Would an AI-Native SSD Actually Look Like?

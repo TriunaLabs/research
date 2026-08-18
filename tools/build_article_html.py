@@ -124,8 +124,8 @@ META = {
                         "Why the winning AI architecture routes each operation to the cheapest tier "
                         "that can perform it - with a laptop-reproducible 102 GB data-movement benchmark."),
         "author": "Paul Woll",
-        "date": "2026-08-19",
-        "date_human": "August 19, 2026",
+        "date": "2026-08-18",
+        "date_human": "August 18, 2026",
     },
 }
 

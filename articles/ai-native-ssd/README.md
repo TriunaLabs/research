@@ -1,6 +1,6 @@
 # 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage
 
-*By Paul Woll · Triuna Labs Research · August 19, 2026*
+*By Paul Woll · Triuna Labs Research · August 18, 2026*
 
 When we think about Large Language Models, we tend to picture GPUs.
 

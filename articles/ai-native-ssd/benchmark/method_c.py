@@ -9,7 +9,7 @@ UP. This file ships everything except the hardware:
   * a NumPy reference implementation of the device-side computation
     (the functional spec an FPGA kernel must match),
   * a simulated device in a separate process that exclusively owns the
-    corpus file, so the host harness never touches the data, so protocol
+    corpus file, so the host harness never touches the data and protocol
     bytes are counted across a real process boundary,
   * a stub class where real device I/O plugs in.
 
@@ -55,21 +55,23 @@ NOISE_SCALE = 0.7 / 32          # must match gen_corpus.py
 # is what the article's ~300 KB figure assumes: 160 * 2060 B ~= 322 KB.
 # ---------------------------------------------------------------------------
 MAGIC = 0x43534431
-REQ_FMT = f"<III{NPROBE}I"
 CAND_BYTES = 8 + 4 + VEC_BYTES
 
 
 def pack_request(query_fp16: np.ndarray, probe_ids: np.ndarray, k: int) -> bytes:
-    head = struct.pack(REQ_FMT, MAGIC, k, len(probe_ids), *probe_ids.tolist())
+    # <III then nprobe u32s: the header carries nprobe, so the probe list
+    # length is variable on the wire (the article's figures use nprobe=8)
+    head = struct.pack(f"<III{len(probe_ids)}I", MAGIC, k, len(probe_ids),
+                       *probe_ids.tolist())
     return head + query_fp16.tobytes()
 
 
 def unpack_request(buf: bytes):
-    head_sz = struct.calcsize(REQ_FMT)
-    magic, k, nprobe, *probe = struct.unpack(REQ_FMT, buf[:head_sz])
+    magic, k, nprobe = struct.unpack_from("<III", buf, 0)
     assert magic == MAGIC, "bad request magic"
-    q = np.frombuffer(buf[head_sz:], dtype=np.float16).astype(np.float32)
-    return q, np.array(probe[:nprobe], dtype=np.int64), k
+    probe = struct.unpack_from(f"<{nprobe}I", buf, 12)
+    q = np.frombuffer(buf[12 + 4 * nprobe:], dtype=np.float16).astype(np.float32)
+    return q, np.array(probe, dtype=np.int64), k
 
 
 def pack_candidates(ids, scores, vectors) -> bytes:
@@ -101,30 +103,74 @@ def device_score_cluster(raw: bytes, q32: np.ndarray, global_start: int, k: int)
     return ids, scores[order], block[order]
 
 
-def run_device_process(corpus_dir: str):
+def run_device_process(corpus_dir: str, tax_gflops: float = 0.0):
     """Entry point for the simulated device subprocess. Owns the corpus file;
-    speaks only the wire protocol on stdin/stdout."""
+    speaks only the wire protocol on stdin/stdout.
+
+    tax_gflops > 0 throttles device-side scoring to that effective FLOP rate
+    (1 MAC = 2 FLOP) by sleeping after each cluster, modelling a compute
+    budget far below a host CPU. 0 means untaxed (original behavior). The
+    device self-reports accounting as one JSON line on stderr; the wire
+    protocol is untouched.
+    """
     offsets = np.load(os.path.join(corpus_dir, "offsets.npy"))
     path = os.path.join(corpus_dir, "corpus.bin")
     stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
     req_len = struct.unpack("<I", stdin.read(4))[0]
     q32, probe, k = unpack_request(stdin.read(req_len))
     out = bytearray()
+    bytes_read = 0
+    macs = 0
+    t_score = 0.0
+    t_sleep = 0.0
+    t_read = 0.0
     with open(path, "rb", buffering=0) as f:
         for c in probe:
             start, end = int(offsets[c]), int(offsets[c + 1])
             f.seek(start * VEC_BYTES)
             need = (end - start) * VEC_BYTES
+            t0 = time.time()
             raw = b""
             while len(raw) < need:
                 chunk = f.read(need - len(raw))
                 if not chunk:
                     break
                 raw += chunk
+            t_read += time.time() - t0
+            bytes_read += len(raw)
+            t0 = time.time()
             ids, scores, vecs = device_score_cluster(raw, q32, start, k)
+            dt = time.time() - t0
+            t_score += dt
+            macs += (end - start) * DIMS
+            if tax_gflops > 0:
+                # bring effective scoring rate down to the budget
+                required = (2.0 * (end - start) * DIMS) / (tax_gflops * 1e9)
+                if required > dt:
+                    time.sleep(required - dt)
+                    t_sleep += required - dt
             out += pack_candidates(ids, scores, vecs)
     stdout.write(struct.pack("<I", len(out)) + bytes(out))
     stdout.flush()
+    try:
+        import psutil
+        peak_rss = psutil.Process().memory_info().peak_wset
+    except Exception:
+        peak_rss = None
+    acct = {
+        "device_bytes_read": bytes_read,
+        "device_macs": macs,
+        "device_read_s": round(t_read, 4),
+        "device_score_s": round(t_score, 4),
+        "device_sleep_s": round(t_sleep, 4),
+        "tax_gflops": tax_gflops,
+        "effective_gflops": round(2 * macs / 1e9 / (t_score + t_sleep), 2)
+                            if (t_score + t_sleep) > 0 else None,
+        "device_peak_rss": peak_rss,
+        "device_cpu_s": round(sum(os.times()[:2]), 3),
+    }
+    sys.stderr.write(json.dumps(acct) + "\n")
+    sys.stderr.flush()
 
 
 # ---------------------------------------------------------------------------
@@ -171,10 +217,12 @@ def main():
     ap.add_argument("--backend", choices=["sim", "hardware"], default="sim")
     ap.add_argument("--device-process", action="store_true",
                     help=argparse.SUPPRESS)
+    ap.add_argument("--tax-gflops", type=float, default=0.0,
+                    help="throttle simulated device scoring to this FLOP rate")
     args = ap.parse_args()
 
     if args.device_process:
-        run_device_process(args.dir)
+        run_device_process(args.dir, args.tax_gflops)
         return
 
     centroids = np.load(os.path.join(args.dir, "centroids.npy"))

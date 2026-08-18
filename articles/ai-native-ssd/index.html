@@ -1030,6 +1030,7 @@ than the drive's.</strong></p>
 <th>Tier</th>
 <th>Capacity class</th>
 <th>Bandwidth class</th>
+<th><strong>Access latency</strong></th>
 <th>Likely AI role</th>
 </tr>
 </thead>
@@ -1038,34 +1039,52 @@ than the drive's.</strong></p>
 <td>GPU SRAM / cache</td>
 <td>MB</td>
 <td>Extremely high</td>
+<td>sub-microsecond</td>
 <td>Immediate computation</td>
 </tr>
 <tr>
-<td>GPU HBM</td>
+<td>GPU HBM / VRAM</td>
 <td>Hundreds of GB per GPU</td>
 <td>Multi-TB/s</td>
+<td><strong>&lt; 1 μs</strong></td>
 <td>Hot tensors, active KV, model execution</td>
 </tr>
 <tr>
 <td>CPU / system memory</td>
 <td>TB-class per server</td>
 <td>Hundreds of GB/s</td>
+<td><strong>10–20 μs</strong></td>
 <td>Larger working sets, orchestration, offload</td>
 </tr>
 <tr>
 <td>NVMe SSD</td>
 <td>TB to 245 TB per drive</td>
 <td>Tens of GB/s</td>
+<td><strong>&gt; 500 μs</strong></td>
 <td>Persistent state, weights, KV, vectors</td>
 </tr>
 <tr>
 <td>AI-native storage</td>
 <td>TB to PB across devices</td>
 <td>Flash-class physical bandwidth</td>
+<td>Flash-class, but <strong>fewer round trips</strong></td>
 <td>Local search, filtering, KV management, near-data compute</td>
 </tr>
 </tbody>
 </table></div>
+<p><em>Latency figures as measured by the SolidAttention authors on consumer hardware.</em></p>
+<div class="callout">
+<p><strong>The latency column is the one that explains the architecture.</strong> Bandwidth says an
+SSD moves tens of gigabytes per second. Latency says each individual request costs
+<strong>roughly 500× a DRAM access and 500,000× an L1 hit</strong>. That gap is why fine-grained
+random reads are fatal while coarse sequential ones are survivable — and it is why
+every system in this article converges on the same two moves: <strong>make the transfers
+bigger, and start them earlier.</strong> SolidAttention consolidates KV pairs into blocks
+and prefetches speculatively. My benchmark reads whole clusters rather than
+individual vectors. Kimi streams packed expert blocks rather than scattered weights.</p>
+<p>An AI-native device does not beat that latency. <strong>It reduces how many times you have
+to pay it.</strong></p>
+</div>
 <p>The final tier does not magically gain HBM bandwidth.</p>
 <p>Its advantage is different:</p>
 <h3><strong>It reduces how much data needs the faster tiers at all.</strong></h3>

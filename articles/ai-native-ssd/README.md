@@ -1155,13 +1155,27 @@ That is the architectural principle behind computational storage:
 
 ## 📊 The AI Memory Hierarchy
 
-| Tier                | Capacity class          | Bandwidth class                | Likely AI role                                            |
-| ------------------- | ----------------------- | ------------------------------ | --------------------------------------------------------- |
-| GPU SRAM / cache    | MB                      | Extremely high                 | Immediate computation                                     |
-| GPU HBM             | Hundreds of GB per GPU  | Multi-TB/s                     | Hot tensors, active KV, model execution                   |
-| CPU / system memory | TB-class per server     | Hundreds of GB/s               | Larger working sets, orchestration, offload               |
-| NVMe SSD            | TB to 245 TB per drive  | Tens of GB/s                   | Persistent state, weights, KV, vectors                    |
-| AI-native storage   | TB to PB across devices | Flash-class physical bandwidth | Local search, filtering, KV management, near-data compute |
+| Tier | Capacity class | Bandwidth class | **Access latency** | Likely AI role |
+|---|---|---|---|---|
+| GPU SRAM / cache | MB | Extremely high | sub-microsecond | Immediate computation |
+| GPU HBM / VRAM | Hundreds of GB per GPU | Multi-TB/s | **< 1 μs** | Hot tensors, active KV, model execution |
+| CPU / system memory | TB-class per server | Hundreds of GB/s | **10–20 μs** | Larger working sets, orchestration, offload |
+| NVMe SSD | TB to 245 TB per drive | Tens of GB/s | **> 500 μs** | Persistent state, weights, KV, vectors |
+| AI-native storage | TB to PB across devices | Flash-class physical bandwidth | Flash-class, but **fewer round trips** | Local search, filtering, KV management, near-data compute |
+
+*Latency figures as measured by the SolidAttention authors on consumer hardware.*
+
+> **The latency column is the one that explains the architecture.** Bandwidth says an
+> SSD moves tens of gigabytes per second. Latency says each individual request costs
+> **roughly 500× a DRAM access and 500,000× an L1 hit**. That gap is why fine-grained
+> random reads are fatal while coarse sequential ones are survivable — and it is why
+> every system in this article converges on the same two moves: **make the transfers
+> bigger, and start them earlier.** SolidAttention consolidates KV pairs into blocks
+> and prefetches speculatively. My benchmark reads whole clusters rather than
+> individual vectors. Kimi streams packed expert blocks rather than scattered weights.
+>
+> An AI-native device does not beat that latency. **It reduces how many times you have
+> to pay it.**
 
 The final tier does not magically gain HBM bandwidth.
 

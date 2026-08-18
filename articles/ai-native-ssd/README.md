@@ -248,6 +248,43 @@ The more interesting question is what happens next.
 
 ---
 
+## 💽 The External-SSD Question
+
+Every local-AI forum gets this question weekly: *"can I just run the model from an
+external SSD?"* It is the right question asked one layer too early, and the answer
+exposes exactly what today's architecture is.
+
+Ordinarily: the SSD stores the model. The runtime loads the weights into memory,
+computation runs from memory, and storage is touched again mainly for persistence.
+Unless the runtime explicitly supports weight streaming or offload, the drive
+affects load time and nothing else. If the model already fits in RAM, a faster
+external SSD does not make inference better. **The storage is a container, not a
+participant.**
+
+The current strategy for models that do not fit is compression. A [widely shared
+writeup this week](https://medium.com/@manjunath.shiva/qwen-3-8-27b-on-a-16-gb-mac-mini-alibabas-new-vision-model-fully-in-memory-f3aaaacbfeb4) walks through squeezing Qwen 3.8-27B, a 55.6 GB
+vision-language model, down to 11.55 GB so it runs entirely inside a 16 GB Mac
+mini at reading pace. It is impressive work, and its author is honest about the
+limit: the compressed build still cannot reliably drive a serious coding agent.
+
+That admission is the interesting part. **Fitting the model is not the same as
+fitting the workload.** An agent needs more than resident weights: persistent
+context, retrieval indexes, tool state, checkpoints, a KV cache that grows with
+every step. Compression shrinks the weights and does nothing about everything
+else that increasingly capable systems drag along with them. Three different
+levers are in play, and they are worth keeping distinct:
+
+* **Model compression** reduces the size of the weights.
+* **Memory-hierarchy optimization** decides what is resident, and when.
+* **AI-native storage**, the subject of this article, would decide what should
+  move, what stays cached, what gets transformed near the data, and what never
+  needs to reach the GPU at all.
+
+> *The future is not merely running AI from an SSD. It is giving the storage
+> system enough intelligence to participate in running AI.*
+
+---
+
 ## 🕰️ The Idea Is Old. The Workload Is New.
 
 Computing near stored data is not a new idea. Researchers were publishing **Active Disk** architectures in [1998](https://dl.acm.org/doi/10.1145/384265.291026), proposing drives with embedded processors so that data-intensive work could happen where the data already lived, and the [motivation they wrote down](https://www.vldb.org/conf/1998/p062.pdf) reads like it was drafted yesterday: why continuously move enormous datasets to a central processor when some of the work can happen where the data resides?
@@ -1254,6 +1291,10 @@ Move less is still wide open.
 ---
 
 ### Out-of-Core Model Inference
+
+[Qwen 3.8-27B on a 16 GB Mac mini (Manjunath Janardhan, Medium)](https://medium.com/@manjunath.shiva/qwen-3-8-27b-on-a-16-gb-mac-mini-alibabas-new-vision-model-fully-in-memory-f3aaaacbfeb4): the
+compression strategy in practice, 55.6 GB to 11.55 GB, fully in memory, with a
+candid account of where the compressed build falls short as an agent.
 
 [Kimi K3 (Moonshot AI)](https://huggingface.co/moonshotai): the model itself, ~2.8T
 parameters, 896 experts per layer, 16 activated per token. Released July 2026.

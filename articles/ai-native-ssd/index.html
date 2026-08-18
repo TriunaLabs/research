@@ -252,6 +252,37 @@ footer.site a { color: var(--ink-2); }
 </div>
 <p>The more interesting question is what happens next.</p>
 <hr />
+<h2>💽 The External-SSD Question</h2>
+<p>Every local-AI forum gets this question weekly: <em>"can I just run the model from an
+external SSD?"</em> It is the right question asked one layer too early, and the answer
+exposes exactly what today's architecture is.</p>
+<p>Ordinarily: the SSD stores the model. The runtime loads the weights into memory,
+computation runs from memory, and storage is touched again mainly for persistence.
+Unless the runtime explicitly supports weight streaming or offload, the drive
+affects load time and nothing else. If the model already fits in RAM, a faster
+external SSD does not make inference better. <strong>The storage is a container, not a
+participant.</strong></p>
+<p>The current strategy for models that do not fit is compression. A <a href="https://medium.com/@manjunath.shiva/qwen-3-8-27b-on-a-16-gb-mac-mini-alibabas-new-vision-model-fully-in-memory-f3aaaacbfeb4">widely shared
+writeup this week</a> walks through squeezing Qwen 3.8-27B, a 55.6 GB
+vision-language model, down to 11.55 GB so it runs entirely inside a 16 GB Mac
+mini at reading pace. It is impressive work, and its author is honest about the
+limit: the compressed build still cannot reliably drive a serious coding agent.</p>
+<p>That admission is the interesting part. <strong>Fitting the model is not the same as
+fitting the workload.</strong> An agent needs more than resident weights: persistent
+context, retrieval indexes, tool state, checkpoints, a KV cache that grows with
+every step. Compression shrinks the weights and does nothing about everything
+else that increasingly capable systems drag along with them. Three different
+levers are in play, and they are worth keeping distinct:</p>
+<ul>
+<li><strong>Model compression</strong> reduces the size of the weights.</li>
+<li><strong>Memory-hierarchy optimization</strong> decides what is resident, and when.</li>
+<li><strong>AI-native storage</strong>, the subject of this article, would decide what should
+  move, what stays cached, what gets transformed near the data, and what never
+  needs to reach the GPU at all.</li>
+</ul>
+<div class="pullquote">The future is not merely running AI from an SSD. It is giving the storage
+system enough intelligence to participate in running AI.</div>
+<hr />
 <h2>🕰️ The Idea Is Old. The Workload Is New.</h2>
 <p>Computing near stored data is not a new idea. Researchers were publishing <strong>Active Disk</strong> architectures in <a href="https://dl.acm.org/doi/10.1145/384265.291026">1998</a>, proposing drives with embedded processors so that data-intensive work could happen where the data already lived, and the <a href="https://www.vldb.org/conf/1998/p062.pdf">motivation they wrote down</a> reads like it was drafted yesterday: why continuously move enormous datasets to a central processor when some of the work can happen where the data resides?</p>
 <p>Three things have happened since. Flash replaced spinning disks, and a modern SSD is already a small computer: controllers, firmware, parallel NAND channels, error correction, address translation. Adding an FPGA made it a programmable one, and Samsung shipped exactly that, twice, as the SmartSSD, marketed for compression, filtering, search and transformation. And the Storage Networking Industry Association (SNIA) gave the field an architectural vocabulary: computational storage, with defined APIs and interoperability work. (A thorough tour is <a href="https://arxiv.org/abs/2112.09691">Past, Present and Future of Computational Storage: A Survey</a>.)</p>
@@ -1065,6 +1096,9 @@ Move less is still wide open.</p>
 <p><a href="https://csl.stanford.edu/~christos/publications/2015.ndp.pact.pdf">Practical Near-Data Processing for In-Memory Analytics Frameworks</a></p>
 <hr />
 <h3>Out-of-Core Model Inference</h3>
+<p><a href="https://medium.com/@manjunath.shiva/qwen-3-8-27b-on-a-16-gb-mac-mini-alibabas-new-vision-model-fully-in-memory-f3aaaacbfeb4">Qwen 3.8-27B on a 16 GB Mac mini (Manjunath Janardhan, Medium)</a>: the
+compression strategy in practice, 55.6 GB to 11.55 GB, fully in memory, with a
+candid account of where the compressed build falls short as an agent.</p>
 <p><a href="https://huggingface.co/moonshotai">Kimi K3 (Moonshot AI)</a>: the model itself, ~2.8T
 parameters, 896 experts per layer, 16 activated per token. Released July 2026.</p>
 <p><a href="https://github.com/FareedKhan-dev/kimi-k3-in-c"><code>kimi-k3-in-c</code></a>: an <strong>independent</strong>

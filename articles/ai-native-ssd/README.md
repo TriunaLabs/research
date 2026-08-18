@@ -248,108 +248,15 @@ The more interesting question is what happens next.
 
 ---
 
-## 🕰️ Computational Storage Did Not Begin With AI
+## 🕰️ The Idea Is Old. The Workload Is New.
 
-The idea of computing near stored data is surprisingly old.
+Computing near stored data is not a new idea. Researchers were publishing **Active Disk** architectures in [1998](https://dl.acm.org/doi/10.1145/384265.291026), proposing drives with embedded processors so that data-intensive work could happen where the data already lived, and the [motivation they wrote down](https://www.vldb.org/conf/1998/p062.pdf) reads like it was drafted yesterday: why continuously move enormous datasets to a central processor when some of the work can happen where the data resides?
 
-### 1998: Active Disks
+Three things have happened since. Flash replaced spinning disks, and a modern SSD is already a small computer: controllers, firmware, parallel NAND channels, error correction, address translation. Adding an FPGA made it a programmable one, and Samsung shipped exactly that, twice, as the SmartSSD, marketed for compression, filtering, search and transformation. And the Storage Networking Industry Association (SNIA) gave the field an architectural vocabulary: computational storage, with defined APIs and interoperability work. (A thorough tour is [Past, Present and Future of Computational Storage: A Survey](https://arxiv.org/abs/2112.09691).)
 
-Researchers were publishing **Active Disk** architectures in the late 1990s.
+So the natural question is: if the idea is twenty-five years old and the hardware shipped, why is it not everywhere? Because for twenty-five years the dominant workloads did not reward it enough. General-purpose queries touch data unpredictably. The win from pushing a filter into a drive was real but modest, and the software cost of programming storage was not.
 
-Instead of treating a disk as a completely passive block device, researchers proposed integrating processing power and memory into storage devices and allowing application-specific computation to occur there.
-
-The 1998 paper [Active Disks: Programming Model, Algorithms and Evaluation](https://dl.acm.org/doi/10.1145/384265.291026) examined drives containing significant processing capability.
-
-Another 1998 paper, [Active Storage for Large-Scale Data Mining and Multimedia](https://www.vldb.org/conf/1998/p062.pdf), explored using processors embedded in storage devices for data-intensive workloads such as data mining and multimedia databases.
-
-The motivation already sounds familiar:
-
-> **Why continuously move enormous datasets to a central processor when some work can happen where the data already resides?**
-
-That idea did not disappear.
-
-Storage technology changed around it.
-
----
-
-## 💾 Flash Made the Idea More Interesting
-
-SSDs changed the nature of storage.
-
-An SSD is not simply a pile of passive memory cells.
-
-It already contains sophisticated:
-
-* Controllers
-* Firmware
-* NAND channels
-* Error correction
-* Wear management
-* Address translation
-* Internal memory
-* Parallel data paths
-
-Once programmable processors, FPGAs or specialized accelerators are added, storage can perform application-specific computation.
-
-Over time, overlapping research areas developed around concepts such as:
-
-* Near-data processing
-* Near-storage processing
-* In-storage computing
-* Programmable storage
-* Computational storage
-
-A useful overview is [Past, Present and Future of Computational Storage: A Survey](https://arxiv.org/abs/2112.09691).
-
-The architectural principle is simple:
-
-> **If moving a large dataset costs more than performing a useful operation beside it, move the operation toward the data.**
-
----
-
-## 🧩 SmartSSDs Became Physical Products
-
-The idea eventually moved beyond research prototypes.
-
-Samsung's SmartSSD Computational Storage Drive combined an NVMe SSD with a Xilinx FPGA in the same module.
-
-AMD/Xilinx documentation described the device as integrating Samsung NVMe storage and programmable FPGA compute to accelerate storage-intensive workloads such as:
-
-* Compression
-* Decompression
-* Encryption
-* Filtering
-* Search
-* Data transformation
-
-Samsung followed with a second-generation SmartSSD in 2022 using adaptive compute technology and onboard processing intended to reduce data movement between **storage, CPU, GPU and RAM**.
-
-This did **not** mean the SSD had become another GPU.
-
-Something subtler happened:
-
-> **The storage device gained enough local intelligence that some bytes no longer needed to leave it.**
-
-That principle becomes extremely interesting for AI.
-
----
-
-## 📐 Computational Storage Became an Architecture
-
-The Storage Networking Industry Association (SNIA) has developed computational-storage architecture, API and interoperability work around this concept.
-
-Computational storage broadly describes systems that couple computation with storage in order to:
-
-* Offload host processing
-* Reduce data movement
-* Process data locally
-* Return smaller or more useful results upstream
-
-That matters because computational storage is no longer simply an isolated laboratory experiment.
-
-There is now an architectural vocabulary around **storage devices that compute**.
-
-Then LLMs arrived.
+What changed is the workload. Two numbers from later in this article make the point as a pair: a measured retrieval query needed **0.8% of a 102.4 GB corpus**, and an independent out-of-core implementation of Kimi K3 activates **under 4% of its 2.78 trillion parameters** per token. LLM state is enormous, structured, and overwhelmingly *skippable*, and which parts matter is decidable in advance by something that understands the data. That selectivity profile is what computational storage spent twenty-five years waiting for.
 
 ---
 
@@ -387,6 +294,8 @@ Search closer to the vectors.
 
 Return the useful results.
 
+**What it demonstrated:** billion-scale ANN search running on real SmartSSD hardware, with the host coordinating shards. **What it only suggests:** that the same division of labor extends beyond nearest-neighbor search to retrieval generally.
+
 ---
 
 ### InstInfer: Put Attention Near the KV Cache
@@ -409,6 +318,8 @@ toward:
 
 **SSD as a participant in inference.**
 
+**What it demonstrated:** decode-phase attention executing beside the stored KV cache in a research prototype, beating the PCIe round trip in its evaluated regime. **What it only suggests:** that the advantage survives production serving, where batching and multi-tenancy change the arithmetic.
+
 ---
 
 ### Near-Storage Attention
@@ -424,6 +335,8 @@ Research:
 Again, the objective is not to reproduce an entire GPU inside an SSD.
 
 It is to move the operations whose data dependencies make them expensive to transport.
+
+**What it demonstrated:** that the memory-bound half of attention separates cleanly enough to push toward storage-side accelerators in evaluation. **What it only suggests:** that the separation holds when production controllers, not evaluation platforms, are doing the work.
 
 ---
 
@@ -462,6 +375,8 @@ Software can predict which portions matter.
 
 That is the beginning of intelligent routing.
 
+**What it demonstrated:** measured serving within 11% of in-memory throughput with the KV cache on flash, on consumer-class hardware. **What it only suggests:** anything about in-device compute. The drive here is entirely passive; every prediction and placement decision is host-side, which is exactly what makes it a fair baseline for the architecture this article sketches.
+
 ---
 
 ### HillInfer: Let the SmartSSD Decide What Matters
@@ -486,6 +401,8 @@ It is helping decide:
 
 That is a much more interesting role.
 
+**What it demonstrated:** importance scoring running inside a SmartSSD FPGA, reducing KV movement. **What it only suggests:** that a drive can own richer placement policy. The FPGA scored blocks; the hierarchy was still managed by the host.
+
 ---
 
 ### Tutti: Fixing the SSD-to-GPU Path
@@ -501,6 +418,8 @@ Its design integrates with vLLM and reorganizes KV-cache storage around **larger
 Research:
 
 [Tutti: Making SSD-Backed KV Cache Practical for Long-Context LLM Serving](https://arxiv.org/abs/2605.03375)
+
+**What it demonstrated:** that SSD-backed KV cache becomes practical when transfers get bigger and the GPU drives the I/O. **What it only suggests:** nothing about in-device intelligence at all. Tutti is evidence for better paths to passive storage, and therefore a live competitor to the smarter-drive thesis.
 
 Notice how the research question has evolved.
 
@@ -528,19 +447,7 @@ It contains different kinds of work.
 
 Some are perfect for GPUs.
 
-Others involve:
-
-* Searching
-* Filtering
-* Ranking
-* Cache lookup
-* Compression
-* Decompression
-* Deduplication
-* Sparse selection
-* Data movement
-* Metadata management
-* Prefetching
+Others involve searching, filtering, ranking, cache lookup, compression and decompression, deduplication, sparse selection, data movement, metadata management and prefetching.
 
 What if an AI-aware storage controller could classify those operations and determine which tier should execute them?
 
@@ -562,39 +469,21 @@ The storage layer does not simply expose anonymous NVMe blocks.
 
 It understands some semantics of models, KV caches, embeddings and context.
 
-A routing layer could make decisions such as:
+A routing layer could make assignments such as:
 
-### Storage-Local
+**Storage-local:**
 
-> Search these four billion embeddings and return the best candidates.
+* Search these four billion embeddings and return the best candidates.
+* Determine whether this document prefix already has reusable KV state.
+* Scan this 200 GB KV-cache pool and identify the blocks most likely to matter.
+* Compress, decompress, quantize or prepare selected model data before transfer.
+* Identify which Mixture-of-Experts weights are likely to be needed next and prefetch them.
 
-### Storage-Local
+**CPU / system memory:** orchestration, branching, scheduling, metadata handling and irregular processing.
 
-> Determine whether this document prefix already has reusable KV state.
+**GPU HBM:** the latency-critical active working set.
 
-### Storage-Local
-
-> Scan this 200 GB KV-cache pool and identify the blocks most likely to matter.
-
-### Storage-Local
-
-> Compress, decompress, quantize or prepare selected model data before transfer.
-
-### Storage-Local
-
-> Identify which Mixture-of-Experts weights are likely to be needed next and prefetch them.
-
-### CPU / System Memory
-
-> Perform orchestration, branching, scheduling, metadata handling and irregular processing.
-
-### GPU HBM
-
-> Keep the latency-critical active working set.
-
-### GPU Compute
-
-> Execute dense matrix multiplication, tensor operations and the hot Transformer path.
+**GPU compute:** dense matrix multiplication, tensor operations and the hot Transformer path.
 
 This changes the architectural objective completely.
 
@@ -606,21 +495,7 @@ It becomes:
 
 > **Prevent the GPU and HBM from ever receiving data that did not need to be there.**
 
-That potentially reduces:
-
-* Bandwidth pressure
-* Scarce HBM consumption
-* CPU-mediated I/O
-* Unnecessary GPU activity
-* Energy spent moving irrelevant data
-
-The routing objective becomes:
-
-**Move less data.**
-
-**Occupy less scarce HBM.**
-
-**Spend less energy.**
+That potentially reduces bandwidth pressure, scarce HBM consumption, CPU-mediated I/O, unnecessary GPU activity and the energy spent moving irrelevant data. The routing objective becomes: **move less data, occupy less scarce HBM, spend less energy.**
 
 ---
 
@@ -697,17 +572,17 @@ Useful references include:
 
 [EIE: Efficient Inference Engine on Compressed Deep Neural Network](https://arxiv.org/abs/1602.01528)
 
+And for LLM inference specifically, this is no longer only an architectural estimate. The SolidAttention authors (whose system appears above) measured whole-system energy directly on their AI-PC testbed: an NVIDIA RTX 4070 Laptop GPU with 8 GB of GDDR7 plus 16 GB of DDR5, with the KV cache resident on the machine's NVMe SSD, against llama.cpp holding the entire cache in memory. The counterintuitive result is worth stating carefully: the SSD-backed configuration draws **higher peak power** than the in-memory baseline (unsurprising, since it is actively hitting flash), yet consumes **3.68 joules per token against llama.cpp's 5.37**, a 46% improvement.
+
+Higher power, less energy. The system finishes sooner and idles less, so the integral comes out ahead of the peak. It is the single most useful empirical result for this article's argument: **adding storage traffic to an inference path made it more energy efficient, not less**, because what it removed was waste, and waste is what the energy was being spent on.
+
 That means locality can potentially create **three wins at once**:
 
 1. Move less data.
 2. Consume less scarce HBM capacity and bandwidth.
 3. Spend less energy moving and processing unnecessary data at a more expensive tier.
 
-This does not mean computation inside an SSD is free.
-
-It is not.
-
-Flash access, controllers, accelerators and interconnects all consume energy.
+Computation inside an SSD is not free; flash access, controllers, accelerators and interconnects all consume energy.
 
 The correct comparison is:
 
@@ -727,17 +602,7 @@ the architecture becomes:
 
 **Storage evaluates cache → retrieves selected blocks → GPU receives hot working set**
 
-The GPU still performs the operations it is uniquely good at.
-
-But it performs less housekeeping.
-
-It sees less irrelevant data.
-
-It dedicates less HBM to cold state.
-
-It potentially spends fewer GPU cycles on work that can happen elsewhere.
-
-And the system avoids paying the bandwidth and energy cost of moving data simply to discover that it was not needed.
+The GPU still performs the operations it is uniquely good at, but it does less housekeeping, sees less irrelevant data, dedicates less HBM to cold state, and the system stops paying bandwidth and energy to move data only to discover it was not needed.
 
 > *Move less data. Use less scarce HBM. Spend less energy. The optimization target may eventually be the route, not just the processor.*
 
@@ -776,19 +641,9 @@ Second, and more importantly: even the *indexed* query still moved roughly **19,
 
 That residual gap is precisely the territory an AI-native retrieval plane would claim. A drive that could score candidates internally and return only the winners would attack the remaining four orders of magnitude.
 
-A back-of-envelope energy note makes the same point from the physics side. Using commonly cited figures of a few pJ per bit for PCIe-class transfer and Horowitz-class estimates for DRAM staging, the naive query's 102 GB of movement costs on the order of **tens of joules**, while the fp16 arithmetic that actually decided the answer costs orders of magnitude less. The energy bill of that query was overwhelmingly a *transportation* bill.
+A back-of-envelope energy note makes the same point from the physics side, with the assumptions stated so a skeptical reader can recalculate. The naive query moves 102.4 GB, which is 8.2 × 10¹¹ bits. Charge each bit one PCIe crossing at ~5 pJ/bit (a commonly cited figure for the link plus controller overhead) and one DRAM write plus one DRAM read for host staging at ~20 pJ/bit each (Horowitz's 45 nm figures; newer nodes are lower). That totals roughly **35 to 40 joules of pure transport**. The arithmetic that decided the answer, 50 million fp16 dot products of length 1024, is about 5 × 10¹⁰ multiply-accumulates, and at low single-digit pJ per fp16 MAC that is on the order of **0.1 joules**. Under these assumptions the movement outcosts the math by more than two orders of magnitude, and no generosity toward the transport figures changes the conclusion: the energy bill of that query was overwhelmingly a *transportation* bill.
 
-**And this is no longer only an estimate.** The SolidAttention authors measured energy
-directly, and the result is counterintuitive enough to be worth stating carefully:
-their SSD-backed system draws **higher peak power** than the in-memory baseline
-(unsurprising, since it is actively hitting flash), yet consumes **3.68 joules per token
-against llama.cpp's 5.37, a 46% improvement**.
-
-Higher power, less energy. The system finishes sooner and idles less, so the integral
-comes out ahead of the peak. That is the single most useful empirical result for this
-article's argument: **adding storage traffic to an inference path made it more energy
-efficient, not less**, because what it removed was waste, and waste is what the energy
-was being spent on.
+That is the same shape as SolidAttention's measured 3.68 versus 5.37 joules per token, earlier in this piece: the bill is transport, and cutting transport pays even when peak power rises.
 
 This measurement is deliberately modest: one query shape, synthetic data, a software index, a consumer drive. It does not demonstrate computational storage; no FPGA was involved. What it measures is the size of the prize: the ratio between the bytes a query touches and the bytes it needs. That ratio is what every system in the research above, from SmartANNS to HillInfer, is built to shrink.
 
@@ -918,6 +773,8 @@ architecture inferred from several workload classes.
 
 If we designed storage specifically around Transformer inference instead of adapting a conventional SSD, I would divide it into several logical planes.
 
+To be explicit about epistemic status: the benchmark, the Kimi K3 numbers and the published papers above are this article's evidence layer. What follows, like the workload router sketched earlier, is its speculative layer: a design hypothesis about where that evidence points, not a description of anything that exists.
+
 ![Today's SSD (NAND plus controller) versus a proposed AI-native device with routing, compute, retrieval, KV, and weight planes behind a high-speed fabric interface](images/03-five-planes.svg)
 
 ---
@@ -928,14 +785,7 @@ LLM weights have unusual storage characteristics.
 
 Once a model is deployed, huge weight files may be read repeatedly while changing relatively infrequently.
 
-An AI-native storage tier could understand model structure and optimize for:
-
-* Quantized weights
-* Tensor-aligned storage
-* Highly parallel weight reads
-* Decompression
-* Prefetching
-* Model-version sharing
+An AI-native storage tier could understand model structure well enough to optimize for quantized, tensor-aligned layouts, highly parallel weight reads, decompression, prefetching and model-version sharing.
 
 And, taking the lesson from the Kimi implementation directly, the placement decisions
 a sparse model actually requires:
@@ -963,28 +813,9 @@ intelligent about **which weights reach it, and when**.
 
 KV cache behaves very differently from model weights.
 
-It is:
+It is created continuously, appended rapidly, read repeatedly, reused across requests, evicted, compressed and increasingly persisted.
 
-* Created continuously
-* Appended rapidly
-* Read repeatedly
-* Reused between requests
-* Evicted
-* Potentially compressed
-* Potentially persistent
-
-An AI-specific KV tier could expose operations such as:
-
-* Append
-* Retrieve
-* Prefix lookup
-* Deduplicate
-* Compress
-* Score
-* Evict
-* Prefetch
-* Persist
-* Share
+An AI-specific KV tier could expose operations such as append, retrieve, prefix lookup, deduplicate, compress, score, evict, prefetch, persist and share.
 
 Current hierarchical KV-cache work already demonstrates that context state is becoming a managed resource spanning multiple memory tiers.
 
@@ -1018,18 +849,7 @@ For RAG systems, this may be one of the clearest examples of:
 
 The device would not need another giant GPU.
 
-Instead, it could have specialized accelerators for operations where locality matters more than maximum floating-point throughput:
-
-* Vector similarity
-* Prefix matching
-* Cache scoring
-* Sparse-attention selection
-* Compression
-* Quantization
-* Dequantization
-* KV filtering
-* Data transformation
-* Selected matrix-vector operations
+Instead, it could have specialized accelerators for operations where locality matters more than maximum floating-point throughput: vector similarity, prefix matching, cache scoring, sparse-attention selection, compression and quantization transforms, KV filtering and selected matrix-vector operations.
 
 Research systems such as InstInfer, near-storage attention architectures and HillInfer are already exploring pieces of this design space.
 
@@ -1041,14 +861,9 @@ This may ultimately be the most important part.
 
 An AI-native storage device could include a scheduler that understands questions such as:
 
-* Where is the data?
-* How expensive is moving it?
-* Is this operation dense or sparse?
-* Does it require GPU-class precision or throughput?
-* Is the data hot or cold?
-* Is this context likely to be reused?
+* Where is the data, and how expensive is moving it?
 * Can 100 GB be reduced to 2 GB before transfer?
-* How much HBM would it consume?
+* How much HBM would it consume, and is the context likely to be reused?
 * What is the energy cost of each possible route?
 * Does the GPU need this data at all?
 
@@ -1076,6 +891,14 @@ into something closer to:
 **NAND + cache engine + retrieval accelerator + lightweight AI compute + workload router + high-speed fabric interface**
 
 At that point, calling it an "SSD" may undersell what it has become.
+
+### The Hard Part Is Not the Silicon
+
+The strongest objection to this sketch is not bandwidth or power. It is software surface area. The planes above ask a storage device to understand model topology, KV importance, MoE routing metadata, quantization formats and versioning. That knowledge currently lives in fast-moving host runtimes (vLLM, TensorRT-LLM, Dynamo) that change monthly. Device firmware ships on a different clock, and a drive that misunderstands a model version does not merely run slowly. It returns wrong answers, from a component the host has stopped double-checking.
+
+So the realistic division of labor is narrower than "move the intelligence into the drive." The host keeps the policy: which model, which quantization, what counts as important, when to evict. The device earns the inner loops that stay stable across model generations: scan, score, top-k, filter, decompress. Those operations have not changed meaningfully in a decade, and their inputs can be validated cheaply at a protocol boundary. Read the five planes through that filter and they shrink to their durable cores, which is how they should be read.
+
+Even the narrowed version is a multi-year software project before it is a silicon project: a protocol for describing placement policy to a device, a conformance suite, a failure and versioning model. Active Disks did not stall in 1998 for lack of transistors either.
 
 ---
 
@@ -1237,15 +1060,7 @@ The boundaries between storage, memory and compute become increasingly difficult
 
 ## 🚀 The GPU Is Not Going Away
 
-And it should not.
-
-GPUs remain extraordinarily good at the hot numerical core of Transformer inference.
-
-Dense matrix multiplication belongs there.
-
-HBM belongs there.
-
-Latency-critical active state belongs there.
+And it should not. Dense matrix multiplication, HBM and latency-critical active state belong exactly where they are: GPUs remain extraordinarily good at the hot numerical core of Transformer inference.
 
 **And a distinction worth drawing precisely:** being able to *execute* a model and
 being able to *serve* it efficiently are different engineering problems. Running 2.78
@@ -1313,18 +1128,7 @@ That is one reason near-memory, in-memory and near-storage computing continue to
 
 Locality can improve performance while also avoiding some of the energy spent transporting data through multiple layers of a system.
 
-An AI workload router could therefore optimize for more than latency.
-
-It could potentially consider:
-
-* Where is the data?
-* How much of it must move?
-* How expensive is that movement?
-* How much HBM would it occupy?
-* What compute tier can execute the operation efficiently?
-* How much energy would each route consume?
-
-Eventually, routing an AI workload might look less like conventional I/O scheduling and more like a **cost function across compute, capacity, bandwidth, latency and energy**.
+An AI workload router could therefore optimize for more than latency: where the data is, how much of it must move, what that movement costs, which tier can execute the operation efficiently, and how much energy each route consumes. Eventually, routing an AI workload might look less like conventional I/O scheduling and more like a **cost function across compute, capacity, bandwidth, latency and energy**.
 
 The next step may be systems that decide dynamically:
 
@@ -1337,6 +1141,22 @@ Not everything belongs on the GPU.
 And increasingly, not everything needs to leave storage.
 
 > *The future AI system may optimize not for maximum GPU activity, but for the minimum movement required to deliver the result.*
+
+---
+
+## ⚖️ Where This Loses
+
+The hypotheses below state what would refute each claim individually. It is worth being equally plain about the regimes where the whole approach loses to a competing architecture even if no single claim breaks:
+
+**Anything that fits in HBM.** A model whose weights and context sit comfortably in GPU memory has nothing to route. Storage intelligence is a response to overflow; without overflow it is pure overhead.
+
+**Workloads with poor selectivity.** The entire argument runs on the gap between bytes read and bytes needed. Dense training epochs touch essentially everything they read, and any workload without exploitable structure offers the drive nothing to discard. No selectivity, no prize.
+
+**Hard latency floors.** SolidAttention's measured 40 ms to load a 1K-token KV cache is survivable because prefetching hides it. Work that can be neither predicted nor batched cannot amortize a device round trip, and interactive decode at low batch sizes will keep such steps host-side.
+
+**If CXL memory pooling gets cheap enough.** Pooled DRAM-class memory over CXL attacks the same capacity gap with load/store semantics and no new software model. Flash keeps a durability and cost-per-terabyte advantage measured in multiples, but every generation of cheaper pooled memory erodes the middle of this argument.
+
+**If bigger transfers capture the win.** This is H1 failing, restated as the competitive case: Tutti-style GPU-direct paths plus good host-side indexes may capture most of the achievable benefit on passive storage. In that world the future is model-aware runtimes, kimi-k3-in-c writ large, and no new silicon at all.
 
 ---
 

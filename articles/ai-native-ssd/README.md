@@ -771,9 +771,9 @@ architecture inferred from several workload classes.
 
 ## 🧩 What Would an AI-Native SSD Actually Look Like?
 
-If we designed storage specifically around Transformer inference instead of adapting a conventional SSD, I would divide it into several logical planes.
+The evidence above keeps pointing at a small number of recurring jobs that are expensive mainly because of data movement: deciding which embeddings matter, deciding which KV blocks matter, deciding which experts matter, and then shipping only those.
 
-To be explicit about epistemic status: the benchmark, the Kimi K3 numbers and the published papers above are this article's evidence layer. What follows, like the workload router sketched earlier, is its speculative layer: a design hypothesis about where that evidence points, not a description of anything that exists.
+If we designed storage around that pattern instead of around a conventional block interface, the useful capabilities fall into five planes. To be explicit about epistemic status: the benchmark, the Kimi K3 numbers and the published papers above are this article's evidence layer, and what follows, like the workload router sketched earlier, is its speculative layer. These are not product features. They are the minimum set of operations that would let the storage tier participate in the decisions rather than just serve the bytes.
 
 ![Today's SSD (NAND plus controller) versus a proposed AI-native device with routing, compute, retrieval, KV, and weight planes behind a high-speed fabric interface](images/03-five-planes.svg)
 
@@ -781,14 +781,7 @@ To be explicit about epistemic status: the benchmark, the Kimi K3 numbers and th
 
 ### 1. Weight Plane
 
-LLM weights have unusual storage characteristics.
-
-Once a model is deployed, huge weight files may be read repeatedly while changing relatively infrequently.
-
-An AI-native storage tier could understand model structure well enough to optimize for quantized, tensor-aligned layouts, highly parallel weight reads, decompression, prefetching and model-version sharing.
-
-And, taking the lesson from the Kimi implementation directly, the placement decisions
-a sparse model actually requires:
+Model weights are read far more often than they are written. A storage tier that understood tensor layout, quantization format and expert boundaries could keep the dense trunk resident and stream only the experts the router actually selected. The interesting policy questions are residency and hotness, not raw sequential bandwidth. Taking the requirements list directly from the placement decisions the Kimi implementation actually makes:
 
 * **Dense-trunk residency**: which layers stay in memory permanently
 * **Routed-expert streaming**: which weights are read straight from storage in their
@@ -796,101 +789,26 @@ a sparse model actually requires:
 * **Expert hotness**: observed activation frequency, not just static classification
 * **Expert-cache allocation**: how a fixed memory budget is divided between pinning
   dense layers and caching frequently-activated experts
-* **Layer-level residency policy** and **access tracing** to inform it
 * **Memory-budget-aware placement**: the same model laid out differently on a 16 GB
   machine than on a 512 GB one
 
-That last group is the difference between a storage tier that merely knows *where*
-weights are and one that understands **the topology of the model and its observed
-access behaviour**.
-
-The GPU still performs the primary matrix computation. But the storage system becomes
-intelligent about **which weights reach it, and when**.
-
----
-
 ### 2. KV Plane
 
-KV cache behaves very differently from model weights.
-
-It is created continuously, appended rapidly, read repeatedly, reused across requests, evicted, compressed and increasingly persisted.
-
-An AI-specific KV tier could expose operations such as append, retrieve, prefix lookup, deduplicate, compress, score, evict, prefetch, persist and share.
-
-Current hierarchical KV-cache work already demonstrates that context state is becoming a managed resource spanning multiple memory tiers.
-
-An AI-native SSD would push more of that intelligence into or immediately beside the storage device.
-
----
+KV cache is append-heavy, frequently re-read, and increasingly long-lived. The useful primitives are prefix lookup, importance scoring, selective fetch, compression and eviction. Current hierarchical KV systems already do some of this on the host. Moving the scoring and selection closer to the blocks themselves is the natural next step if the volume of cold KV continues to grow.
 
 ### 3. Retrieval Plane
 
-Vector databases are an especially obvious opportunity.
-
-If billions of embeddings reside on flash, a computational-storage device could potentially perform:
-
-* Approximate nearest-neighbor search
-* Metadata filtering
-* Candidate pruning
-* Similarity calculations
-* Coarse ranking
-
-before returning a much smaller candidate set.
-
-SmartANNS demonstrates that parts of this architecture are already viable on SmartSSD hardware.
-
-For RAG systems, this may be one of the clearest examples of:
-
-> **Compute beside the data and move only the answer.**
-
----
+When the corpus is much larger than memory, the dominant cost is usually moving candidates that will later be discarded. Approximate search, metadata filtering and coarse ranking are the operations that most clearly benefit from running beside the data. SmartANNS already showed parts of this are feasible on existing computational storage.
 
 ### 4. Compute Plane
 
-The device would not need another giant GPU.
-
-Instead, it could have specialized accelerators for operations where locality matters more than maximum floating-point throughput: vector similarity, prefix matching, cache scoring, sparse-attention selection, compression and quantization transforms, KV filtering and selected matrix-vector operations.
-
-Research systems such as InstInfer, near-storage attention architectures and HillInfer are already exploring pieces of this design space.
-
----
+The device does not need GPU-class matrix throughput. It needs enough arithmetic to score vectors, evaluate simple importance heuristics, decompress and filter. Anything denser still belongs on the GPU.
 
 ### 5. Routing Plane
 
-This may ultimately be the most important part.
+Someone has to decide, for each request, which of the above operations should run locally and which data is worth moving. That policy can live on the host, in the device, or be split. The important part is that the decision is made with knowledge of both the model structure and the actual cost of moving the data.
 
-An AI-native storage device could include a scheduler that understands questions such as:
-
-* Where is the data, and how expensive is moving it?
-* Can 100 GB be reduced to 2 GB before transfer?
-* How much HBM would it consume, and is the context likely to be reused?
-* What is the energy cost of each possible route?
-* Does the GPU need this data at all?
-
-Sparse models add a second category of question, placement rather than transport:
-
-* Should this layer remain resident?
-* Should these experts stay cold?
-* Which expert groups activate together, repeatedly?
-* Is scarce DRAM better spent pinning dense layers or caching hot experts?
-* Can the next weight access be predicted from the routing decision already made?
-
-Those are **semantic placement decisions**, not device I/O decisions, and they are
-what turns the Routing Plane from a traffic controller into the part of the system
-that decides what the hierarchy should look like for *this* model under *this* memory
-budget.
-
-Then it routes work accordingly.
-
-That would turn the SSD from:
-
-**NAND + controller**
-
-into something closer to:
-
-**NAND + cache engine + retrieval accelerator + lightweight AI compute + workload router + high-speed fabric interface**
-
-At that point, calling it an "SSD" may undersell what it has become.
+None of this requires the storage device to become a general-purpose accelerator. It only requires that the device stop being a pure block server for the workloads where most of the bytes will be thrown away after a cheap test.
 
 ### The Hard Part Is Not the Silicon
 
@@ -898,7 +816,7 @@ The strongest objection to this sketch is not bandwidth or power. It is software
 
 So the realistic division of labor is narrower than "move the intelligence into the drive." The host keeps the policy: which model, which quantization, what counts as important, when to evict. The device earns the inner loops that stay stable across model generations: scan, score, top-k, filter, decompress. Those operations have not changed meaningfully in a decade, and their inputs can be validated cheaply at a protocol boundary. Read the five planes through that filter and they shrink to their durable cores, which is how they should be read.
 
-Even the narrowed version is a multi-year software project before it is a silicon project: a protocol for describing placement policy to a device, a conformance suite, a failure and versioning model. Active Disks did not stall in 1998 for lack of transistors either.
+Even the narrowed version is a multi-year software project before it is a silicon project: a protocol for describing placement policy to a device, a conformance suite, a failure and versioning model. Active Disks did not stall in 1998 for lack of transistors either. That history is also why this article's claims are framed as testable hypotheses rather than predictions about the next product cycle.
 
 ---
 

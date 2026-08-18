@@ -10,14 +10,14 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage">
 <meta property="og:description" content="An LLM request is many kinds of work, and only some of it needs a GPU. Why the winning AI architecture routes each operation to the cheapest tier that can perform it - with a laptop-reproducible 102 GB data-movement benchmark.">
-<meta property="og:image" content="https://triunalabs.github.io/research/articles/ai-native-ssd/images/01-the-gap.png">
+<meta property="og:image" content="https://triunalabs.github.io/research/articles/ai-native-ssd/images/05-same-problem.png">
 <meta property="og:url" content="https://triunalabs.github.io/research/articles/ai-native-ssd/">
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Article","headline":"Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage",
 "author":{"@type":"Person","name":"Paul Woll"},
 "publisher":{"@type":"Organization","name":"Triuna Labs","url":"https://triunalabs.com"},
-"datePublished":"2026-08-17","image":"https://triunalabs.github.io/research/articles/ai-native-ssd/images/01-the-gap.png","url":"https://triunalabs.github.io/research/articles/ai-native-ssd/"}
+"datePublished":"2026-08-19","image":"https://triunalabs.github.io/research/articles/ai-native-ssd/images/05-same-problem.png","url":"https://triunalabs.github.io/research/articles/ai-native-ssd/"}
 </script>
 <style>
 :root {
@@ -95,7 +95,7 @@ footer.site a { color: var(--ink-2); }
   </span>
 </div></header>
 <main class="wrap">
-<p class="byline">Paul Woll &#183; Triuna Labs Research &#183; August 17, 2026</p>
+<p class="byline">Paul Woll &#183; Triuna Labs Research &#183; August 19, 2026</p>
 <h1>🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage</h1>
 <p>When we think about Large Language Models, we tend to picture GPUs.</p>
 <p>That makes sense. Modern generative AI would not exist at its current scale without them.</p>
@@ -727,6 +727,13 @@ footer.site a { color: var(--ink-2); }
 <p>Everything above concerns <strong>retrieval</strong> — embeddings, KV cache, the bytes a query
 touches. While I was writing it, a second and quite different workload began exhibiting
 the same architecture problem.</p>
+<p><strong>A note on timing, because it changes how much weight this deserves.</strong> I came across
+this <em>while writing the sections above</em> — after the thesis was formed and the benchmark
+had already been run. I was not looking for supporting evidence. Its author was not
+arguing about storage architecture, and nothing in it references any of this. <strong>That is
+precisely what makes it useful: it is convergence, not corroboration.</strong> An argument that
+predicts where an unrelated project lands is worth more than one assembled from
+citations chosen to fit.</p>
 <p>In July 2026 Moonshot AI released <strong>Kimi K3</strong>, a mixture-of-experts model of roughly
 <strong>2.8 trillion parameters</strong>. Its sparsity is the interesting part: the model holds
 <strong>896 experts per layer and activates 16 of them per token</strong>, so only about

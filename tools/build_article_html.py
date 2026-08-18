@@ -124,8 +124,8 @@ META = {
                         "Why the winning AI architecture routes each operation to the cheapest tier "
                         "that can perform it - with a laptop-reproducible 102 GB data-movement benchmark."),
         "author": "Paul Woll",
-        "date": "2026-08-17",
-        "date_human": "August 17, 2026",
+        "date": "2026-08-19",
+        "date_human": "August 19, 2026",
     },
 }
 
@@ -165,7 +165,7 @@ def build(article_dir: str) -> str:
     html = TEMPLATE.format(
         title=title, description=meta["description"], author=meta["author"],
         date=meta["date"], date_human=meta["date_human"], canonical=canonical,
-        og_image=f"{canonical}images/01-the-gap.png",
+        og_image=f"{canonical}images/05-same-problem.png",
         repo_dir=f"https://github.com/TriunaLabs/research/tree/main/{key}",
         body=body,
     )

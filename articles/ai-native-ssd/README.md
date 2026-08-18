@@ -1,6 +1,6 @@
 # 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage
 
-*By Paul Woll · Triuna Labs Research · August 18, 2026*
+*By Paul Woll · Triuna Labs Research · August 19, 2026*
 
 When we think about Large Language Models, we tend to picture GPUs.
 
@@ -805,6 +805,14 @@ Everything except the FPGA kernel is public in the repository: the corpus genera
 Everything above concerns **retrieval** — embeddings, KV cache, the bytes a query
 touches. While I was writing it, a second and quite different workload began exhibiting
 the same architecture problem.
+
+**A note on timing, because it changes how much weight this deserves.** I came across
+this *while writing the sections above* — after the thesis was formed and the benchmark
+had already been run. I was not looking for supporting evidence. Its author was not
+arguing about storage architecture, and nothing in it references any of this. **That is
+precisely what makes it useful: it is convergence, not corroboration.** An argument that
+predicts where an unrelated project lands is worth more than one assembled from
+citations chosen to fit.
 
 In July 2026 Moonshot AI released **Kimi K3**, a mixture-of-experts model of roughly
 **2.8 trillion parameters**. Its sparsity is the interesting part: the model holds

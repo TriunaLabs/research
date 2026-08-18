@@ -15,7 +15,7 @@ not available; use CPU package power via LibreHardwareMonitor or a wall-power
 meter when energy runs start. Until then runs record wall time and per-process
 CPU seconds, and energy claims stay out of the results.
 
-## 1. Constrained-device crossover sweep - `constrained_sweep.py` (BUILT)
+## 1. Constrained-device crossover sweep - `constrained_sweep.py` (DONE, first pass: see [sweep-results.md](sweep-results.md))
 
 Attacks **H1**, informs **H2**. Method B (host, unconstrained) vs the Method C
 simulation under device-like constraints: 2 cores, policed 1.5 GB RAM budget,

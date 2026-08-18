@@ -435,7 +435,20 @@ Importantly, the work targets **memory-constrained AI PCs**, demonstrating that 
 
 The system groups KV pairs into larger blocks, predicts future accesses and coordinates SSD I/O with GPU computation.
 
-For long-context workloads, the researchers reported dramatic reductions in KV-cache memory requirements while maintaining useful model accuracy.
+At a 128K-token context the authors report **up to 3.1× faster inference** and **up to
+98% less KV-cache memory**, with accuracy comparable to the unmodified model — their
+own accuracy tables show it beating INT4 KV-cache quantisation substantially, which is
+the usual way people buy memory back.
+
+Two details are worth carrying forward. The paper measures that **loading a 1K-token
+KV cache (128 MB) from SSD takes about 40 ms — nearly half a decode step**, which is
+what "storage became part of inference" looks like as a number. And they find roughly
+**81% similarity in block selection between consecutive iterations**, which is what
+makes speculative prefetching work: attention sparsity is not random, it has temporal
+locality a system can exploit.
+
+Most striking, they report SSD-backed serving landing within **11% of fully in-memory
+throughput** — the entire KV cache on flash, for a tenth of the speed.
 
 Research:
 
@@ -764,6 +777,18 @@ Second, and more importantly: even the *indexed* query still moved roughly **19,
 That residual gap is precisely the territory an AI-native retrieval plane would claim. A drive that could score candidates internally and return only the winners would attack the remaining four orders of magnitude.
 
 A back-of-envelope energy note makes the same point from the physics side. Using commonly cited figures of a few pJ per bit for PCIe-class transfer and Horowitz-class estimates for DRAM staging, the naive query's 102 GB of movement costs on the order of **tens of joules** — while the fp16 arithmetic that actually decided the answer costs orders of magnitude less. The energy bill of that query was overwhelmingly a *transportation* bill.
+
+**And this is no longer only an estimate.** The SolidAttention authors measured energy
+directly, and the result is counterintuitive enough to be worth stating carefully:
+their SSD-backed system draws **higher peak power** than the in-memory baseline —
+unsurprising, since it is actively hitting flash — yet consumes **3.68 joules per token
+against llama.cpp's 5.37, a 46% improvement**.
+
+Higher power, less energy. The system finishes sooner and idles less, so the integral
+comes out ahead of the peak. That is the single most useful empirical result for this
+article's argument: **adding storage traffic to an inference path made it more energy
+efficient, not less** — because what it removed was waste, and waste is what the energy
+was being spent on.
 
 This measurement is deliberately modest: one query shape, synthetic data, a software index, a consumer drive. It does not demonstrate computational storage — no FPGA was involved. What it measures is the size of the prize: the ratio between the bytes a query touches and the bytes it needs. That ratio is what every system in the research above — from SmartANNS to HillInfer — is built to shrink.
 

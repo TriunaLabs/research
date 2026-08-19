@@ -111,8 +111,7 @@ footer.site a {{ color: var(--ink-2); }}
 <footer class="site"><div class="wrap">
   Prose licensed <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> &#183;
   code <a href="https://github.com/TriunaLabs/research/blob/main/LICENSE">MIT</a> &#183;
-  reproduce the benchmark: <a href="{repo_dir}/benchmark">scripts &amp; raw results</a> &#183;
-  built with a <a href="https://github.com/TriunaLabs/research/blob/main/tools/build_article_html.py">40-line generator</a> (Fold Article Studio pending)
+  reproduce the benchmark: <a href="{repo_dir}/benchmark">scripts &amp; raw results</a>
 </div></footer>
 </body>
 </html>

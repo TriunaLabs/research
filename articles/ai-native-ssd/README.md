@@ -1,4 +1,4 @@
-# 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native Storage
+# 🧠 Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native SSDs
 
 *By Paul Woll · Triuna Labs Research · August 18, 2026*
 

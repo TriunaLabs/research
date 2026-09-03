@@ -12,6 +12,16 @@ Where an article includes measurements, the repository contains the scripts that
 | --- | --- | --- | --- | --- |
 | [Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native SSDs](articles/ai-native-ssd/) | Paul Woll | 2026-08-18 | AI is dissolving the boundary between storage and compute. From today's SSD-backed KV-cache tiers to a proposed five-plane AI-native storage architecture, with a laptop-reproducible measurement of the data-movement waste it targets. | [benchmark](articles/ai-native-ssd/benchmark/) |
 
+## Observations
+
+Field notes from real working sessions: qualitative, abstracted, and published so that
+reasoning they later support has a visible origin. Unlike articles, they ship with no
+code, and each states plainly what it does and does not support.
+
+| Observation | Date | Subject |
+| --- | --- | --- |
+| [Crossing a context boundary](observations/2026-09-03-context-boundaries/) | 2026-09-03 | What a compaction summary preserves, what it drops, and two failure modes that are not about memory at all |
+
 ## Licensing
 
 - **Articles and prose** (Markdown content under `articles/`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): share and adapt with attribution.

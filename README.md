@@ -21,6 +21,7 @@ code, and each states plainly what it does and does not support.
 
 | Observation | Date | Subject |
 | --- | --- | --- |
+| [Pinning, merging and prompt order in three agent memory systems](observations/2026-10-02-memory-pinning/) | 2026-10-02 | Whether Letta, LangGraph and Mem0 pin a version, declare how concurrent writes merge, and place volatile content where a prompt cache can survive it. A documentation review with quotes, not a test. |
 | [Crossing a context boundary](observations/2026-09-03-context-boundaries/) | 2026-09-03 | What a compaction summary preserves, what it drops, and two failure modes that are not about memory at all |
 
 ## Licensing

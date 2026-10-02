@@ -11,6 +11,12 @@ This note states the measurement, the baselines it was taken against, what it do
 show, and ships a tool and a sample pair so the mechanism can be run rather than taken on
 trust.
 
+A companion observation,
+[Pinning, merging and prompt order in three agent memory systems](../../observations/2026-10-02-memory-pinning/),
+asks whether three widely used systems have this problem, by reading and quoting their
+documentation. One of them renders a character counter above the value that counter
+describes, which is the finding below arrived at independently.
+
 ## Why the number is so small
 
 Prompt caches match from the start of a request and stop at the first byte that differs.

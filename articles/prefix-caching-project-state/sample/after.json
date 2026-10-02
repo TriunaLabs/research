@@ -1,0 +1,227 @@
+{
+  "lpc_version": "0.5",
+  "contract_id": "fare-calculator-0001",
+  "revision": 3,
+  "status": "active",
+  "title": "Regional transit fare calculator",
+  "original_request": "Build a service that tells a rider what a journey will cost before they travel, including transfers and concession eligibility, for the four operators in the region.",
+  "objective": {
+    "statement": "Publish a fare calculation service that returns the price of a journey across the region's four transit operators, including transfer rules and concession eligibility, that an operator can verify against their own published tariff.",
+    "deliverables": [
+      {
+        "id": "del-api",
+        "text": "A fare quote API taking origin, destination, time and rider class."
+      },
+      {
+        "id": "del-rules",
+        "text": "A machine readable tariff per operator, versioned by effective date."
+      },
+      {
+        "id": "del-audit",
+        "text": "A quote explanation showing every rule that contributed to a price."
+      }
+    ],
+    "success_criteria": [
+      {
+        "id": "suc-match",
+        "text": "Quotes match each operator's published tariff on an agreed sample of journeys."
+      },
+      {
+        "id": "suc-explain",
+        "text": "Every quote can be explained rule by rule without reading the code."
+      }
+    ]
+  },
+  "authority": {
+    "owner": "user",
+    "model_may_propose": true,
+    "approval_required_for": [
+      "objective",
+      "deliverables",
+      "constraints",
+      "acceptance_criteria",
+      "authority",
+      "tariff-changes"
+    ]
+  },
+  "constraints": [
+    {
+      "id": "con-tariff-source",
+      "text": "A fare rule is only valid if it cites the operator document it came from, with an effective date."
+    },
+    {
+      "id": "con-no-guess",
+      "text": "Where the tariff is ambiguous the service returns a range and says why, rather than picking a number."
+    },
+    {
+      "id": "con-concession",
+      "text": "Concession eligibility is never inferred from anything the rider did not state."
+    },
+    {
+      "id": "con-offline",
+      "text": "A quote must be computable without a network call to an operator."
+    }
+  ],
+  "requirements": [
+    {
+      "id": "req-transfer-window",
+      "status": "accepted",
+      "text": "Transfers within 90 minutes of the first validation are charged as one journey, per the regional agreement."
+    },
+    {
+      "id": "req-peak",
+      "status": "accepted",
+      "text": "Peak pricing applies by validation time, not by journey start, when an operator defines it that way."
+    },
+    {
+      "id": "req-explain",
+      "status": "accepted",
+      "text": "Every quote carries the ordered list of rule ids that produced it."
+    },
+    {
+      "id": "req-zone-overlap",
+      "status": "proposed",
+      "text": "Where two operators claim the same zone the cheaper tariff applies."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "dec-rules-as-data",
+      "text": "Tariffs are data, not code, so an operator can review a change without a release.",
+      "rationale": "Fare changes arrive as documents on a schedule nobody controls."
+    },
+    {
+      "id": "dec-explain-first",
+      "text": "The explanation is produced by the same pass that produces the price.",
+      "rationale": "An explanation generated separately from the calculation will eventually disagree with it."
+    },
+    {
+      "id": "dec-no-live-calls",
+      "text": "Quotes are computed from a local tariff snapshot.",
+      "rationale": "Operator endpoints are not available at the latency a quote needs."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "ac-sample-match",
+      "status": "accepted",
+      "text": "The agreed sample of 500 journeys matches each operator's published tariff exactly."
+    },
+    {
+      "id": "ac-explanations",
+      "status": "accepted",
+      "text": "Every quote in the sample carries an explanation naming only rules that exist."
+    },
+    {
+      "id": "ac-ambiguity",
+      "status": "accepted",
+      "text": "Ambiguous journeys return a range, and the ranges are reviewed by the operator."
+    },
+    {
+      "id": "ac-effective-dates",
+      "status": "proposed",
+      "text": "A tariff change takes effect on its stated date without a deployment."
+    }
+  ],
+  "findings": [
+    {
+      "id": "fnd-transfer-clock",
+      "status": "accepted",
+      "confidence": "high",
+      "evidence_refs": [
+        "ev-tariff-pack"
+      ],
+      "text": "Two operators start the transfer clock at validation and one starts it at boarding, which differ on long platforms."
+    },
+    {
+      "id": "fnd-concession-proof",
+      "status": "accepted",
+      "confidence": "medium",
+      "evidence_refs": [
+        "ev-tariff-pack"
+      ],
+      "text": "Concession categories are consistent across operators but the proof each accepts is not."
+    },
+    {
+      "id": "fnd-rounding-per-leg",
+      "status": "accepted",
+      "confidence": "medium",
+      "evidence_refs": [
+        "ev-tariff-pack"
+      ],
+      "text": "Three of the four operators round per leg and publish it; the fourth rounds per journey without saying so."
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unk-zone-overlap",
+      "status": "open",
+      "priority": "high",
+      "question": "Where two operators claim the same zone, whose tariff applies?",
+      "impact": "Affects every cross boundary journey and the whole transfer model."
+    },
+    {
+      "id": "unk-rounding",
+      "status": "open",
+      "priority": "medium",
+      "question": "Is rounding applied per leg or per journey?",
+      "impact": "Changes totals by small amounts on most multi leg journeys."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-tariff-import",
+      "status": "completed",
+      "scope": "project",
+      "text": "Import the four published tariffs as versioned data."
+    },
+    {
+      "id": "task-transfer-rules",
+      "status": "active",
+      "scope": "project",
+      "text": "Implement the transfer window, including the boarding versus validation difference."
+    },
+    {
+      "id": "task-sample",
+      "status": "planned",
+      "scope": "project",
+      "text": "Agree the 500 journey sample with each operator."
+    }
+  ],
+  "project_state": {
+    "phase": "delivery",
+    "readiness": "not-evaluated",
+    "outcome_status": "measuring",
+    "summary": "Tariffs imported, transfer rules in progress, ambiguity handling agreed. The zone overlap question still blocks the cross boundary cases."
+  },
+  "history": [
+    {
+      "revision": 0,
+      "proposed_by": "an assistant",
+      "accepted_by": "the owner",
+      "applied_by": "patch tool",
+      "summary": "Open the record from the original request."
+    },
+    {
+      "revision": 1,
+      "proposed_by": "an assistant",
+      "accepted_by": "the owner",
+      "applied_by": "patch tool",
+      "summary": "Record the four constraints and the tariff source rule."
+    },
+    {
+      "revision": 2,
+      "proposed_by": "an assistant",
+      "accepted_by": "the owner",
+      "applied_by": "patch tool",
+      "summary": "Accept the transfer window and peak pricing requirements."
+    },
+    {
+      "revision": 3,
+      "proposed_by": "an assistant",
+      "accepted_by": "the owner",
+      "applied_by": "patch tool",
+      "summary": "Accept the ambiguity criterion and record the rounding finding."
+    }
+  ]
+}

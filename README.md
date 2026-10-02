@@ -11,6 +11,7 @@ Where an article includes measurements, the repository contains the scripts that
 | Article | Author | Published | Summary | Reproducible code |
 | --- | --- | --- | --- | --- |
 | [Route the Work, Not Just the Data: GPUs, CPUs, and the Rise of AI-Native SSDs](articles/ai-native-ssd/) | Paul Woll | 2026-08-18 | AI is dissolving the boundary between storage and compute. From today's SSD-backed KV-cache tiers to a proposed five-plane AI-native storage architecture, with a laptop-reproducible measurement of the data-movement waste it targets. | [benchmark](articles/ai-native-ssd/benchmark/) |
+| [Sixty-five bytes: prompt caching and the shape of project state](articles/prefix-caching-project-state/) | Paul Woll | 2026-10-02 | A 51 KB project record was handed to a model twice, with one accepted change between. Sixty-five bytes were reusable as a cached prefix, because prompt caches match from the start and the revision number sits near the top. Reordering the same information by how fast it changes took that to 51.8%. | [tool and sample](articles/prefix-caching-project-state/) |
 
 ## Observations
 

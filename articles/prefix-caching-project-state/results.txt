@@ -1,0 +1,103 @@
+Measured 2026-10-02. Three real project records. Bytes exact, tokens estimated.
+Produced by the measuring tool in the Living Prompt Contract repository, which is
+not public yet. See README.md for what can be re-run here.
+
+The three record filenames are replaced with record-A, record-B and record-C, and
+the two change filenames with change-1 and change-2. Every figure below is exactly
+as produced; only those names are substituted.
+
+==============================================================
+$ measure_projection.py --contract contracts/record-A.json
+==============================================================
+CONTRACT  contracts/record-A.json  revision 2
+tokens are ESTIMATES at 4.0 chars/token; bytes and chars are exact
+
+rendering          bytes     chars   lines   tokens~  vs full
+full              51,085    51,085   1,214    12,771  100.0%
+projection         9,900     9,900     105     2,475   19.4%
+checkpoint        19,024    18,975     169     4,744   37.1%
+
+WHAT THE PROJECTION DROPS
+     3 history entries
+     4 evidence bodies
+     4 closed tasks
+    10 artifact records
+     3 fault records
+     1 correction records
+  the projection is not a substitute for the contract: it carries no
+  history, no evidence bodies and no artifact ledger, so it cannot be
+  resumed from, only worked from. The contract stays canonical.
+
+STABLE PREFIX ACROSS REAL REVISIONS
+  NOTE  change-1.patch.json failed to apply: LPC patch failed: Updated contract is invalid: /faults/0/remediation/status: Expected one of ['accepted', 'proposed', 'rejected', 'superseded'], got 'applied'. Status is whether the RULE was accepted, which is a decision; whether it has held is `verified` with a window.
+  NOTE  replay stopped at revision 0 and does not reach the live revision 2
+  Each document below is still hash-verified: revision 0 is the document the
+  first accepted patch declares as its base, and the last is the contract
+  itself. What is unavailable is the step-by-step replay, so a pair may span
+  more than one accepted revision. That is stated per row.
+  revision 0 via git: sha256:bf45d62d3f0db91e 
+  revision 2 via record-A.json as it stands: sha256:5b5c2756b7135b77 
+  revision 0 to 2 (spans 2 accepted revisions): 5,124 of 9,900 bytes identical from the start (51.8% of the projection would survive a prefix cache)
+                    the raw contract would retain 65 of 51,085 (0.1%)
+
+==============================================================
+$ measure_projection.py --contract contracts/record-B.json
+==============================================================
+CONTRACT  contracts/record-B.json  revision 0
+tokens are ESTIMATES at 4.0 chars/token; bytes and chars are exact
+
+rendering          bytes     chars   lines   tokens~  vs full
+full              47,424    47,424   1,183    11,856  100.0%
+projection        10,744    10,744     106     2,686   22.7%
+checkpoint        17,451    17,402     164     4,350   36.7%
+
+WHAT THE PROJECTION DROPS
+     1 history entries
+     7 evidence bodies
+     3 closed tasks
+     8 artifact records
+     4 fault records
+     4 correction records
+  the projection is not a substitute for the contract: it carries no
+  history, no evidence bodies and no artifact ledger, so it cannot be
+  resumed from, only worked from. The contract stays canonical.
+
+STABLE PREFIX ACROSS REAL REVISIONS
+  NOTE  change-1.patch.json declares base sha256:bf45d62d3f0db91e but revision 0 hashes to sha256:c43dfb76c4fdd1fc
+  NOTE  change-1.patch.json failed to apply: LPC patch failed: Integrity conflict: patch was computed against sha256:bf45d62d3f0db91e159e4b218c961dc68127170c9b7967c6a720d601b7a25c72, but this contract is sha256:c43dfb76c4fdd1fcce9d18d96b0a1f4f4ef5162d880576bac1c4c0857f28603a. Both are revision 0, so they are diverged copies rather than a stale patch.
+  Each document below is still hash-verified: revision 0 is the document the
+  first accepted patch declares as its base, and the last is the contract
+  itself. What is unavailable is the step-by-step replay, so a pair may span
+  more than one accepted revision. That is stated per row.
+  fewer than two revisions available; nothing to compare
+
+==============================================================
+$ measure_projection.py --contract contracts/record-C.json
+==============================================================
+CONTRACT  contracts/record-C.json  revision 0
+tokens are ESTIMATES at 4.0 chars/token; bytes and chars are exact
+
+rendering          bytes     chars   lines   tokens~  vs full
+full              35,829    35,829   1,017     8,957  100.0%
+projection         9,114     9,114     106     2,278   25.4%
+checkpoint        14,042    14,017     163     3,504   39.1%
+
+WHAT THE PROJECTION DROPS
+     1 history entries
+     6 evidence bodies
+     1 closed tasks
+     7 artifact records
+     2 fault records
+  the projection is not a substitute for the contract: it carries no
+  history, no evidence bodies and no artifact ledger, so it cannot be
+  resumed from, only worked from. The contract stays canonical.
+
+STABLE PREFIX ACROSS REAL REVISIONS
+  NOTE  change-1.patch.json declares base sha256:bf45d62d3f0db91e but revision 0 hashes to sha256:069c5428d4774de0
+  NOTE  change-1.patch.json failed to apply: LPC patch failed: Integrity conflict: patch was computed against sha256:bf45d62d3f0db91e159e4b218c961dc68127170c9b7967c6a720d601b7a25c72, but this contract is sha256:069c5428d4774de03444230dddc094f0d11c18a87df689f3968e0640dae88977. Both are revision 0, so they are diverged copies rather than a stale patch.
+  Each document below is still hash-verified: revision 0 is the document the
+  first accepted patch declares as its base, and the last is the contract
+  itself. What is unavailable is the step-by-step replay, so a pair may span
+  more than one accepted revision. That is stated per row.
+  fewer than two revisions available; nothing to compare
+

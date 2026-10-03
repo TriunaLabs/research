@@ -2,10 +2,11 @@
 
 **2026-10-02 · Paul Woll · Triuna Labs**
 
-A project record of 51,085 bytes was handed to a model twice, with one accepted change in
-between. **Sixty-five bytes were reusable** as a cached prompt prefix.
+A project record of 51,085 bytes, rendered at revision 0 and again at revision 2, two accepted
+changes later. **Sixty-five bytes were still identical** from the start of the file.
 
-Reordering the same information, without removing any of it, took that to 51.8%.
+Reordering the same selected fields, without removing any of them, took that to 51.8%. Selecting
+less material, on its own, accounted for none of the difference.
 
 This note states the measurement, the baselines it was taken against, what it does not
 show, and ships a tool and a sample pair so the mechanism can be run rather than taken on
@@ -23,6 +24,12 @@ Prompt caches match from the start of a request and stop at the first byte that 
 Everything after that point is reprocessed and billed as new, even when it is byte for byte
 identical to the previous request. So reuse is not decided by how much of your context
 repeats. It is decided by **where the first change falls**.
+
+**A shared prefix is a precondition for reuse, not a cache hit, and this note measures the
+precondition.** Providers require an exact match across the whole prompt including tools and system
+content, impose a minimum cacheable length that varies by model, expire entries on a timer, and
+route requests by load, so an identical prefix can still miss. Nothing here was measured against an
+API.
 
 The record in question is JSON, and it opens with the format version, the record id, and
 then `"revision": 2`. The revision increments on every accepted change. Sixty-five bytes
@@ -61,14 +68,21 @@ Dividing 9,900 by 89,000,000 produces a flattering figure that means nothing.
 
 ## Result 2: the ordering matters more than the size
 
-Measured across two real revisions of record A, spanning a set of accepted changes:
+Measured across record A at revision 0 and revision 2, two accepted changes apart. Three
+renderings, and the middle one is the control:
 
 | rendering | identical bytes from the start | share |
 | --- | --- | --- |
-| projection, volatility order | 5,124 of 9,900 | **51.8%** |
-| the record as stored | 65 of 51,085 | **0.1%** |
+| the record as stored, custody first | 65 of 51,085 | **0.1%** |
+| the same selected fields, custody first *(control)* | 62 of 9,900 | **0.6%** |
+| the same selected fields, custody last | 5,124 of 9,900 | **51.8%** |
 
-The reusable prefix does not end at a section boundary. It ends part way through a line, at
+The control holds exactly the same selected fields as the third row, in the same words, at the same
+9,900 bytes. Only the order differs. **Selecting less material moved the shared prefix from 65 bytes
+to 62, which is to say it did nothing. Moving the volatile fields to the end moved it to 5,124.**
+Compression is not what buys the prefix. Ordering is.
+
+The shared prefix does not end at a section boundary. It ends part way through a line, at
 the exact character where one acceptance criterion changed from `proposed` to `accepted`.
 That is worth knowing when choosing an order: **records carrying a status are less stable
 than they look, and belong below the ones that do not.**
@@ -94,13 +108,14 @@ python measure_prefix.py sample/before.json sample/after.json
 ```
 
 ```
-rendering                             bytes  reusable    share   tokens~
-record as stored, custody first       7,380        81     1.1%     1,845
-projection, volatility order          3,249     2,158    66.4%       812
+rendering                                   bytes    shared    share   tokens~
+record as stored, custody first             7,380        81     1.1%     1,845
+same selected fields, custody first         3,249        91     2.8%       812
+same selected fields, custody last          3,249     2,158    66.4%       812
 
-the projection is 44.0% the size of the record
+the selected view is 44.0% the size of the record
 
-the projection's reusable prefix ends here:
+with custody last, the shared prefix ends here:
   - ac-ambiguity [ <HERE> accepted]: Ambiguous journeys return a range, ...
 ```
 
@@ -112,13 +127,15 @@ projection keeps most of it, and the break lands exactly where a status changed.
 ## What this does not show
 
 - **No token counts.** Every token figure here is an estimate at a stated divisor.
-- **No cache hit rate.** Prefix share is the property a cache needs, not the saving it
-  produces. Caches have minimum sizes and expiry windows, and the counter that reports a
-  cache read is visible only on a raw API path, not inside a subscription harness.
+- **No cache hit rate.** A shared prefix is a precondition for reuse, not the saving it
+  produces. Providers require an exact match over the whole prompt, impose a minimum cacheable
+  length that varies by model, expire entries on a timer, and route by load, so an identical
+  prefix can still miss. The counter that reports an actual cache read is visible only on a raw
+  API path, not inside a subscription harness.
 - **No money.** Nothing here converts to a cost figure.
-- **One record, one pair of revisions**, spanning more than one accepted change. A smaller
-  change should preserve considerably more of the prefix. That figure is not reported
-  because it could not be verified, for the reason below.
+- **One record, one pair of revisions**, revision 0 to revision 2, spanning two accepted
+  changes. A single smaller change should preserve considerably more of the prefix. That figure
+  is not reported because it could not be verified, for the reason below.
 - **Not independently reproducible yet.** The records measured are a working project's real
   state and the tool that produced `results.txt` lives in a repository that is not public.
   The method is stated, the logic is published here in standalone form, and the sample

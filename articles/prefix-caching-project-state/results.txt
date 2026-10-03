@@ -1,10 +1,11 @@
-Measured 2026-10-02. Three real project records. Bytes exact, tokens estimated.
-Produced by the measuring tool in the Living Prompt Contract repository, which is
-not public yet. See README.md for what can be re-run here.
+Measured 2026-10-02, corrected 2026-10-03. Three real project records.
+Bytes exact, tokens estimated.
 
-The three record filenames are replaced with record-A, record-B and record-C, and
-the two change filenames with change-1 and change-2. Every figure below is exactly
-as produced; only those names are substituted.
+A shared byte prefix is a PRECONDITION for cache reuse, not a cache hit.
+Nothing below was measured against a provider API.
+
+Record filenames are replaced with record-A, record-B and record-C, and change
+filenames with change-1 and change-2. Every figure is exactly as produced.
 
 ==============================================================
 $ measure_projection.py --contract contracts/record-A.json
@@ -37,7 +38,7 @@ STABLE PREFIX ACROSS REAL REVISIONS
   more than one accepted revision. That is stated per row.
   revision 0 via git: sha256:bf45d62d3f0db91e 
   revision 2 via record-A.json as it stands: sha256:5b5c2756b7135b77 
-  revision 0 to 2 (spans 2 accepted revisions): 5,124 of 9,900 bytes identical from the start (51.8% of the projection would survive a prefix cache)
+  revision 0 to 2 (spans 2 accepted revisions): 5,124 of 9,900 bytes identical from the start (51.8% of the projection identical from the start)
                     the raw contract would retain 65 of 51,085 (0.1%)
 
 ==============================================================

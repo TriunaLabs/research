@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure how much of a project record survives as a reusable prompt prefix.
+"""Measure how much of a project record stays byte identical when it changes.
 
 Prompt caches match from the start of a request and stop at the first byte that
 differs. So what decides reuse is not how much of your context repeats, it is
@@ -8,9 +8,10 @@ WHERE the first change falls.
 This takes two versions of the same project record, one before a change and one
 after, and reports how many bytes at the front are identical in two renderings:
 
-  the record as stored     ordered for custody, identity and revision first
-  a compiled projection    ordered by volatility, slowest material first and
-                           the revision and integrity hash last
+  the record as stored         ordered for custody, identity and revision first
+  the same selected fields     in that same custody-first order: the control
+  the same selected fields     ordered by volatility, with revision and
+                               integrity hash last
 
 Standard library only. No network. Run it on the sample pair in sample/ or on
 any two JSON files of the same shape.
@@ -19,10 +20,12 @@ any two JSON files of the same shape.
 
 WHAT THIS IS NOT
 ----------------
-It is not a cache simulator and it reports no saving. Prefix share is the
-property a cache needs, not the money it returns: caches have minimum sizes and
-expiry windows, and the counter reporting a cache read is visible only on a raw
-API path. Bytes and characters here are exact; tokens are estimated at a stated
+It is not a cache simulator and it reports no saving. A shared prefix is a
+PRECONDITION for reuse, not a cache hit: providers require an exact match over
+the whole prompt including tools and system content, impose a minimum cacheable
+length that varies by model, expire entries on a timer, and route requests by
+load, so an identical prefix can still miss. The counter that reports an actual
+cache read is visible only on a raw API path. Bytes and characters here are exact; tokens are estimated at a stated
 characters-per-token and labelled as estimates.
 """
 from __future__ import annotations
@@ -50,7 +53,7 @@ def block(label: str, rows: list[str]) -> list[str]:
     return [label] + rows + [""] if rows else []
 
 
-def project(record: dict) -> str:
+def project(record: dict, custody_first: bool = False) -> str:
     """Render the active view, slowest moving material first.
 
     The order is the whole point. Identity, objective and authority almost never
@@ -103,7 +106,7 @@ def project(record: dict) -> str:
                   and t.get("status") in OPEN_TASK])
 
     state = record.get("project_state") or {}
-    out += ["# STATE",
+    custody = ["# STATE",
             f"phase: {state.get('phase')}  readiness: {state.get('readiness')}  "
             f"outcome: {state.get('outcome_status')}",
             "",
@@ -113,6 +116,11 @@ def project(record: dict) -> str:
             f"revision: {record.get('revision')}",
             f"integrity: {integrity(record)}",
             ""]
+    # custody_first renders the SAME selected fields in the order the stored
+    # record uses, identity and revision at the top. It is the control: comparing
+    # a compact view against a whole file changes selection AND order at once,
+    # and only this pair isolates the order.
+    out = custody + out if custody_first else out + custody
     return "\n".join(out)
 
 
@@ -138,7 +146,7 @@ def report(label: str, before: str, after: str, cpt: float) -> int:
     a, b = before.encode("utf-8"), after.encode("utf-8")
     shared = common_prefix(a, b)
     share = shared / len(b) if b else 0
-    print(f"{label:<34}{len(b):>9,}{shared:>10,}{share:>9.1%}{round(len(after) / cpt):>10,}")
+    print(f"{label:<40}{len(b):>9,}{shared:>10,}{share:>9.1%}{round(len(after) / cpt):>10,}")
     return shared
 
 
@@ -156,15 +164,18 @@ def main(argv: list[str]) -> int:
 
     print(f"before: revision {before.get('revision')}   after: revision {after.get('revision')}")
     print(f"tokens are ESTIMATES at {args.chars_per_token} chars/token; bytes are exact\n")
-    print(f"{'rendering':<34}{'bytes':>9}{'reusable':>10}{'share':>9}{'tokens~':>10}")
+    print(f"{'rendering':<40}{'bytes':>9}{'shared':>10}{'share':>9}{'tokens~':>10}")
 
     report("record as stored, custody first", canonical(before), canonical(after),
            args.chars_per_token)
+    # The control: same selected fields, stored order. Isolates ordering.
+    report("same selected fields, custody first", project(before, True), project(after, True),
+           args.chars_per_token)
     p_before, p_after = project(before), project(after)
-    shared = report("projection, volatility order", p_before, p_after, args.chars_per_token)
+    shared = report("same selected fields, custody last", p_before, p_after, args.chars_per_token)
 
-    print(f"\nthe projection is {len(p_after) / len(canonical(after)):.1%} the size of the record")
-    print("\nthe projection's reusable prefix ends here:")
+    print(f"\nthe selected view is {len(p_after) / len(canonical(after)):.1%} the size of the record")
+    print("\nwith custody last, the shared prefix ends here:")
     print(f"  {first_difference(p_before, p_after, shared)}")
     return 0
 

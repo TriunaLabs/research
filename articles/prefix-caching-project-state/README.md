@@ -140,13 +140,19 @@ projection keeps most of it, and the break lands exactly where a status changed.
 - **One record, one pair of revisions**, revision 0 to revision 2, spanning two accepted
   changes. A single smaller change should preserve considerably more of the prefix. That figure
   is not reported because it could not be verified, for the reason below.
-- **Not independently reproducible yet.** The records measured are a working project's real
-  state and the tool that produced `results.txt` lives in a repository that is not public.
+- **Not independently reproducible yet.** The records measured are the real state of a working
+  project governed by the Living Prompt Contract, a format I maintain, and the tool that produced
+  `results.txt` lives in a repository that is not public.
   The method is stated, the logic is published here in standalone form, and the sample
   demonstrates the mechanism. Independent reproduction of *these* numbers has to wait for
   the format and its tooling to be released.
 
 That last point is the honest limit of this note, and it is stated rather than glossed.
+
+**Whether any of this produces provider cache reads or lower costs remains a question for a
+measured agent workflow:** run against an API, with the cache counters read and the bill compared.
+That is a different piece of work and it has not been done. A caching implementation of any kind,
+provider-side or otherwise, belongs in that later measured piece rather than this one.
 
 ## A note on verification, including of this measurement
 

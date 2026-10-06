@@ -20,16 +20,19 @@ describes, which is the finding below arrived at independently.
 
 ## Why the number is so small
 
-Prompt caches match from the start of a request and stop at the first byte that differs.
-Everything after that point is reprocessed and billed as new, even when it is byte for byte
-identical to the previous request. So reuse is not decided by how much of your context
-repeats. It is decided by **where the first change falls**.
+The first changed byte ends the identical prefix measured here. For prefix-based prompt
+caching, **where the first change falls** matters more than how much text repeats later.
+Actual cache reuse is decided in tokens at provider-specific eligible breakpoints, not at
+an arbitrary byte boundary; the changed suffix may be processed as new input even when
+some of its text also appeared in the previous request. See the
+[OpenAI](https://developers.openai.com/api/docs/guides/prompt-caching) and
+[Claude](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) caching guides.
 
 **A shared prefix is a precondition for reuse, not a cache hit, and this note measures the
-precondition.** Providers require an exact match across the whole prompt including tools and system
-content, impose a minimum cacheable length that varies by model, expire entries on a timer, and
-route requests by load, so an identical prefix can still miss. Nothing here was measured against an
-API.
+precondition.** Providers require an exact match up to a cacheable point in the assembled prompt,
+which can include tools and system content. They also impose model-dependent minimum lengths and
+cache lifetimes; routing can affect whether an eligible entry is available. An identical byte prefix
+therefore does not guarantee a cache read. Nothing here was measured against an API.
 
 The record in question is JSON, and it opens with the format version, the record id, and
 then `"revision": 2`. The revision increments on every accepted change. Sixty-five bytes
@@ -98,9 +101,10 @@ whose losses are not stated is not a measurement.
 
 ## Run it yourself
 
-`measure_prefix.py` is standalone: standard library only, no network, no dependency on the
-tooling that produced the results above. `sample/` holds an invented project record of the
-same shape, before and after one accepted change.
+[measure_prefix.py](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/measure_prefix.py)
+is standalone: standard library only, no network, no dependency on the tooling that produced the
+results above. [sample/](https://github.com/TriunaLabs/research/tree/main/articles/prefix-caching-project-state/sample)
+holds an invented project record of the same shape, before and after one accepted change.
 
 ```
 python make_sample.py
@@ -128,10 +132,10 @@ projection keeps most of it, and the break lands exactly where a status changed.
 
 - **No token counts.** Every token figure here is an estimate at a stated divisor.
 - **No cache hit rate.** A shared prefix is a precondition for reuse, not the saving it
-  produces. Providers require an exact match over the whole prompt, impose a minimum cacheable
-  length that varies by model, expire entries on a timer, and route by load, so an identical
-  prefix can still miss. The counter that reports an actual cache read is visible only on a raw
-  API path, not inside a subscription harness.
+  produces. Providers require a matching eligible prefix, impose model-dependent minimum lengths
+  and cache lifetimes, and may route requests differently, so an identical prefix can still miss.
+  The counter that reports an actual cache read is visible only on a raw API path, not inside a
+  subscription harness.
 - **No money.** Nothing here converts to a cost figure.
 - **One record, one pair of revisions**, revision 0 to revision 2, spanning two accepted
   changes. A single smaller change should preserve considerably more of the prefix. That figure
@@ -162,9 +166,9 @@ hash the first accepted change declares as its base, and the current record.
 
 | file | what it is |
 | --- | --- |
-| `measure_prefix.py` | standalone measuring tool, standard library only |
-| `make_sample.py` | generates the sample pair |
-| `sample/before.json`, `sample/after.json` | invented record, before and after one accepted change |
-| `results.txt` | raw output of the three measured runs |
+| [measure_prefix.py](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/measure_prefix.py) | standalone measuring tool, standard library only |
+| [make_sample.py](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/make_sample.py) | generates the sample pair |
+| [sample/before.json](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/sample/before.json), [sample/after.json](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/sample/after.json) | invented record, before and after one accepted change |
+| [results.txt](https://github.com/TriunaLabs/research/blob/main/articles/prefix-caching-project-state/results.txt) | raw output of the three measured runs |
 
 Prose here is CC BY 4.0; the scripts are MIT, as per the repository root.
